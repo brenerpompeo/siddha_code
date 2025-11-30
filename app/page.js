@@ -995,9 +995,10 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
 
 // ============ SPRINTS PAGE (simplified for now) ============
 
-const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints }) => {
+const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setSprints }) => {
   const [viewMode, setViewMode] = useState('kanban');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
   const [selectedPillar, setSelectedPillar] = useState(null);
   
   const viewTabs = [
@@ -1017,10 +1018,16 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints }) =>
           <h1 className="text-2xl font-bold text-white">Sprints</h1>
           <p className="text-white/50">Gerencie seus ciclos de desenvolvimento</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Tarefa
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setIsCreateSprintModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Sprint
+          </Button>
+          <Button onClick={() => setIsCreateTaskModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Tarefa
+          </Button>
+        </div>
       </div>
       
       {/* View Mode Tabs */}
