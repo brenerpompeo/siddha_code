@@ -1078,9 +1078,15 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
       )}
       
       <CreateTaskModal 
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        isOpen={isCreateTaskModalOpen}
+        onClose={() => setIsCreateTaskModalOpen(false)}
         onCreateTask={(task) => setTasks(prev => [...prev, { ...task, id: uuidv4(), status: 'potential', gut_check_score: null }])}
+      />
+      
+      <CreateSprintModal
+        isOpen={isCreateSprintModalOpen}
+        onClose={() => setIsCreateSprintModalOpen(false)}
+        onCreateSprint={(sprint) => setSprints(prev => [...prev, { ...sprint, id: uuidv4(), status: 'active', created_at: new Date().toISOString() }])}
       />
     </div>
   );
