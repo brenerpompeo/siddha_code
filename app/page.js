@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Circle,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   Target,
   Calendar,
@@ -26,14 +27,42 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  CalendarDays,
+  CalendarRange,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Github,
+  Link2,
+  Edit3,
+  Trash2,
+  Search,
+  Hash,
+  Bot,
+  Send,
+  BarChart3,
+  TrendingUp,
+  Award,
+  Star
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { PILLARS, getPillarByKey, getPillarColor } from '@/lib/constants/pillars';
 import { RANKS, getRankByXp, getNextRank, getRankProgress } from '@/lib/constants/ranks';
 import { KANBAN_COLUMNS, GUT_CHECK_PROMPTS, XP_REWARDS, getColumnById } from '@/lib/constants/kanban';
+import { ARCHETYPES, HD_TYPES, ZODIAC_SIGNS, getArchetypeByKey, getHDTypeByKey } from '@/lib/constants/archetypes';
 import { createClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+  Tooltip
+} from 'recharts';
 
 // DnD Kit imports
 import {
@@ -103,7 +132,8 @@ const Button = ({ children, variant = 'primary', size = 'md', className, disable
   const sizes = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base'
+    lg: 'px-6 py-3 text-base',
+    icon: 'p-2'
   };
   
   return (
@@ -158,250 +188,175 @@ const Progress = ({ value, max = 100, color = '#8b5cf6', className }) => (
   </div>
 );
 
-// ============ AUTH COMPONENTS ============
+const Tabs = ({ tabs, activeTab, onChange, className }) => (
+  <div className={cn('flex bg-white/5 rounded-lg p-1', className)}>
+    {tabs.map(tab => (
+      <button
+        key={tab.id}
+        onClick={() => onChange(tab.id)}
+        className={cn(
+          'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all',
+          activeTab === tab.id
+            ? 'bg-primary text-white'
+            : 'text-white/60 hover:text-white hover:bg-white/5'
+        )}
+      >
+        {tab.icon && <tab.icon className="w-4 h-4" />}
+        {tab.label}
+      </button>
+    ))}
+  </div>
+);
 
-const AuthPage = ({ onAuthSuccess }) => {
-  const [mode, setMode] = useState('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+// ============ USER DROPDOWN ============
+
+const UserDropdown = ({ user, userProfile, onSignOut, onNavigate }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const currentRank = getRankByXp(userProfile?.xp || 0);
+  const displayName = userProfile?.username || user?.email?.split('@')[0] || 'User';
   
-  const supabase = createClient();
-  
-  const handleSignIn = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      onAuthSuccess(data.user);
-    } catch (err) {
-      setError(err.message || 'Failed to sign in');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-    
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      
-      if (error) throw error;
-      
-      if (data.user && !data.user.confirmed_at) {
-        setMessage('Check your email for the confirmation link!');
-      } else {
-        onAuthSuccess(data.user);
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to sign up');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      
-      if (error) throw error;
-    } catch (err) {
-      setError(err.message || 'Failed to sign in with Google');
-      setLoading(false);
-    }
-  };
+  const menuItems = [
+    { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'sprints', label: 'Meus Sprints', icon: Kanban },
+    { id: 'social', label: 'Redes Sociais', icon: Link2 },
+    { id: 'journal', label: 'Diário de Bordo', icon: BookOpen },
+    { id: 'settings', label: 'Configurações', icon: Settings },
+  ];
   
   return (
-    <div className="min-h-screen bg-void flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-pillar-spiritual flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-white">Siddha Code</h1>
-          <p className="text-white/50 mt-2">Life Operating System</p>
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-all"
+      >
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-pillar-cultural flex items-center justify-center">
+          <span className="text-sm font-bold">{displayName[0]?.toUpperCase()}</span>
         </div>
-        
-        <GlassCard className="p-8">
-          {/* Tabs */}
-          <div className="flex mb-6 bg-white/5 rounded-lg p-1">
-            <button
-              onClick={() => { setMode('signin'); setError(''); setMessage(''); }}
-              className={cn(
-                'flex-1 py-2 rounded-md text-sm font-medium transition-all',
-                mode === 'signin' ? 'bg-primary text-white' : 'text-white/60 hover:text-white'
-              )}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => { setMode('signup'); setError(''); setMessage(''); }}
-              className={cn(
-                'flex-1 py-2 rounded-md text-sm font-medium transition-all',
-                mode === 'signup' ? 'bg-primary text-white' : 'text-white/60 hover:text-white'
-              )}
-            >
-              Sign Up
-            </button>
+        <div className="hidden sm:block text-left">
+          <p className="text-sm font-medium text-white">{displayName}</p>
+          <p className="text-xs" style={{ color: currentRank.color }}>{currentRank.title}</p>
+        </div>
+        <ChevronDown className={cn(
+          'w-4 h-4 text-white/50 transition-transform',
+          isOpen && 'rotate-180'
+        )} />
+      </button>
+      
+      {isOpen && (
+        <>
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setIsOpen(false)} 
+          />
+          <div className="absolute right-0 top-full mt-2 w-64 z-50">
+            <GlassCard className="p-2">
+              {/* User Info */}
+              <div className="p-3 border-b border-white/10 mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-pillar-cultural flex items-center justify-center">
+                    <span className="text-lg font-bold">{displayName[0]?.toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white">{displayName}</p>
+                    <p className="text-xs text-white/50">{user?.email}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-primary" />
+                    <span>{(userProfile?.xp || 0).toLocaleString()} XP</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Flame className="w-3 h-3 text-orange-500" />
+                    <span>{userProfile?.streak || 0} dias</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Menu Items */}
+              {menuItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    if (item.id === 'settings') {
+                      // TODO: Open settings modal
+                    } else if (item.id === 'social') {
+                      onNavigate('profile');
+                    } else {
+                      onNavigate(item.id);
+                    }
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </button>
+              ))}
+              
+              {/* Logout */}
+              <div className="border-t border-white/10 mt-2 pt-2">
+                <button
+                  onClick={() => {
+                    onSignOut();
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </button>
+              </div>
+            </GlassCard>
           </div>
-          
-          {/* Error/Success Messages */}
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400" />
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-          )}
-          
-          {message && (
-            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-              <p className="text-sm text-green-400">{message}</p>
-            </div>
-          )}
-          
-          {/* Form */}
-          <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              icon={Mail}
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            
-            <div className="relative">
-              <Input
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                icon={Lock}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-white/30 hover:text-white/60"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            
-            {mode === 'signup' && (
-              <Input
-                label="Confirm Password"
-                type={showPassword ? 'text' : 'password'}
-                icon={Lock}
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            )}
-            
-            <Button type="submit" className="w-full" size="lg" loading={loading}>
-              {mode === 'signin' ? 'Sign In' : 'Create Account'}
-            </Button>
-          </form>
-          
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-surface text-white/50">or continue with</span>
-            </div>
-          </div>
-          
-          {/* Google Sign In */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Google
-          </Button>
-          
-          {/* Demo Mode */}
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full"
-              onClick={() => onAuthSuccess({ id: 'demo-user', email: 'demo@siddhacode.com' })}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Try Demo Mode
-            </Button>
-            <p className="text-xs text-white/30 text-center mt-2">
-              No sign up required - explore all features
-            </p>
-          </div>
-        </GlassCard>
-        
-        {/* Footer */}
-        <p className="text-center text-white/30 text-sm mt-6">
-          Gamified productivity with Human Design
-        </p>
-      </div>
+        </>
+      )}
     </div>
   );
 };
 
-// ============ LAYOUT COMPONENTS ============
+// ============ NEW HEADER ============
+
+const Header = ({ title, setIsMobileOpen, user, userProfile, onSignOut, onNavigate }) => {
+  return (
+    <header className="h-16 border-b border-white/10 bg-surface/80 backdrop-blur-xl sticky top-0 z-30">
+      <div className="h-full px-4 lg:px-8 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button 
+            className="lg:hidden p-2 hover:bg-white/10 rounded-lg"
+            onClick={() => setIsMobileOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <h2 className="text-lg font-semibold text-white">{title}</h2>
+        </div>
+        
+        {/* Quick Stats */}
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-6">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5">
+              <Zap className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">{(userProfile?.xp || 0).toLocaleString()} XP</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5">
+              <Flame className="w-4 h-4 text-orange-500" />
+              <span className="text-sm font-medium">{userProfile?.streak || 0} dias</span>
+            </div>
+          </div>
+          
+          <UserDropdown 
+            user={user} 
+            userProfile={userProfile} 
+            onSignOut={onSignOut}
+            onNavigate={onNavigate}
+          />
+        </div>
+      </div>
+    </header>
+  );
+};
+
+// ============ SIDEBAR ============
 
 const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, user, userProfile }) => {
   const currentRank = getRankByXp(userProfile?.xp || 0);
@@ -412,7 +367,6 @@ const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, u
   
   return (
     <>
-      {/* Mobile overlay */}
       {isMobileOpen && (
         <div 
           className="fixed inset-0 bg-black/60 z-40 lg:hidden"
@@ -420,13 +374,11 @@ const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, u
         />
       )}
       
-      {/* Sidebar */}
       <aside className={cn(
         'fixed top-0 left-0 h-full w-64 bg-surface/95 backdrop-blur-xl border-r border-white/10 z-50',
         'transform transition-transform duration-300 lg:translate-x-0',
         isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}>
-        {/* Header */}
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -447,11 +399,10 @@ const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, u
           </div>
         </div>
         
-        {/* User Stats */}
         <div className="p-4 m-4 rounded-xl bg-white/[0.03] border border-white/5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-pillar-cultural flex items-center justify-center">
-              <span className="text-lg font-bold">{displayName[0].toUpperCase()}</span>
+              <span className="text-lg font-bold">{displayName[0]?.toUpperCase()}</span>
             </div>
             <div>
               <p className="font-semibold text-white">{displayName}</p>
@@ -461,7 +412,6 @@ const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, u
             </div>
           </div>
           
-          {/* XP Progress */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-white/50">XP</span>
@@ -476,7 +426,6 @@ const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, u
           </div>
         </div>
         
-        {/* Navigation */}
         <nav className="px-4 space-y-1">
           {NAV_ITEMS.map(item => (
             <button
@@ -498,7 +447,6 @@ const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, u
           ))}
         </nav>
         
-        {/* Bottom section */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/5 transition-all">
             <Settings className="w-5 h-5" />
@@ -510,101 +458,787 @@ const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, u
   );
 };
 
-const Header = ({ title, setIsMobileOpen, user, userProfile, onSignOut }) => {
+// ============ RADAR CHART ============
+
+const PillarRadarChart = ({ userProfile, tasks }) => {
+  // Calculate progress for each pillar based on completed tasks
+  const completedTasks = tasks.filter(t => t.status === 'wisdom');
+  
+  const pillarData = PILLARS.map(pillar => {
+    const pillarTasks = completedTasks.filter(t => t.pillar === pillar.key);
+    const totalTasks = tasks.filter(t => t.pillar === pillar.key);
+    const progress = totalTasks.length > 0 
+      ? Math.round((pillarTasks.length / Math.max(totalTasks.length, 10)) * 100)
+      : (userProfile?.pillars_stats?.[pillar.key] || 0) * 2; // Fallback to stats
+    
+    return {
+      pillar: pillar.label,
+      value: Math.min(progress, 100),
+      fullMark: 100,
+      color: pillar.color
+    };
+  });
+  
   return (
-    <header className="h-16 border-b border-white/10 bg-surface/80 backdrop-blur-xl sticky top-0 z-30">
-      <div className="h-full px-4 lg:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button 
-            className="lg:hidden p-2 hover:bg-white/10 rounded-lg"
-            onClick={() => setIsMobileOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
+    <GlassCard className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="font-semibold text-white">Progresso nos 7 Pilares</h3>
+          <p className="text-xs text-white/50">Baseado em tarefas completadas</p>
         </div>
-        
-        {/* Quick Stats & User */}
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">{(userProfile?.xp || 0).toLocaleString()} XP</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-500" />
-              <span className="text-sm font-medium">{userProfile?.streak || 0} day streak</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-pillar-cultural flex items-center justify-center">
-              <span className="text-sm font-bold">
-                {(userProfile?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
-              </span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onSignOut}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        <BarChart3 className="w-5 h-5 text-primary" />
       </div>
-    </header>
+      
+      <div className="h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart data={pillarData}>
+            <PolarGrid stroke="rgba(255,255,255,0.1)" />
+            <PolarAngleAxis 
+              dataKey="pillar" 
+              tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }}
+            />
+            <PolarRadiusAxis 
+              angle={90} 
+              domain={[0, 100]}
+              tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+            />
+            <Radar
+              name="Progresso"
+              dataKey="value"
+              stroke="#8b5cf6"
+              fill="#8b5cf6"
+              fillOpacity={0.3}
+              strokeWidth={2}
+            />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: '#0a0a0c', 
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px'
+              }}
+              labelStyle={{ color: 'white' }}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
+      
+      {/* Legend */}
+      <div className="grid grid-cols-4 gap-2 mt-4">
+        {PILLARS.slice(0, 4).map(pillar => (
+          <div key={pillar.key} className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pillar.color }} />
+            <span className="text-xs text-white/60 truncate">{pillar.label}</span>
+          </div>
+        ))}
+      </div>
+    </GlassCard>
   );
 };
 
-// ============ DRAG AND DROP COMPONENTS ============
+// ============ PROTOCOLS WIDGET ============
 
-const SortableTaskCard = ({ task, onMove }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
+const ProtocolsWidget = ({ protocols, onToggle, activeTab, setActiveTab }) => {
+  const tabs = [
+    { id: 'daily', label: 'Diário', icon: Clock },
+    { id: 'weekly', label: 'Semanal', icon: CalendarDays },
+    { id: 'monthly', label: 'Mensal', icon: CalendarRange },
+  ];
   
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+  // Filter protocols by tab
+  const filteredProtocols = protocols.filter(p => {
+    if (activeTab === 'daily') return !p.frequency || p.frequency === 'daily';
+    if (activeTab === 'weekly') return p.frequency === 'weekly';
+    if (activeTab === 'monthly') return p.frequency === 'monthly';
+    return true;
+  });
+  
+  const completedCount = filteredProtocols.filter(p => p.is_checked).length;
+  const totalCount = filteredProtocols.length;
+  const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  
+  return (
+    <GlassCard className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="font-semibold text-white">Protocolos</h3>
+          <p className="text-xs text-white/50">{completedCount}/{totalCount} completados</p>
+        </div>
+        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+          <Target className="w-5 h-5 text-primary" />
+        </div>
+      </div>
+      
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} className="mb-4" />
+      
+      <Progress value={progress} className="mb-4" />
+      
+      <div className="space-y-2 max-h-[240px] overflow-y-auto">
+        {filteredProtocols.length === 0 ? (
+          <p className="text-center text-white/40 py-4 text-sm">
+            Nenhum protocolo {activeTab === 'daily' ? 'diário' : activeTab === 'weekly' ? 'semanal' : 'mensal'}
+          </p>
+        ) : (
+          filteredProtocols.map(protocol => (
+            <button
+              key={protocol.id}
+              onClick={() => onToggle(protocol.id)}
+              className={cn(
+                'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
+                protocol.is_checked 
+                  ? 'bg-primary/10 border border-primary/30'
+                  : 'bg-white/[0.02] border border-white/5 hover:border-white/10'
+              )}
+            >
+              {protocol.is_checked ? (
+                <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+              ) : (
+                <Circle className="w-5 h-5 text-white/30 flex-shrink-0" />
+              )}
+              <span className={cn(
+                'text-sm text-left',
+                protocol.is_checked ? 'text-white' : 'text-white/70'
+              )}>
+                {protocol.name}
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+      
+      {completedCount === totalCount && totalCount > 0 && (
+        <div className="mt-4 p-3 rounded-lg bg-primary/20 border border-primary/30 text-center">
+          <p className="text-sm text-primary font-medium">
+            Todos completados! +{XP_REWARDS.all_protocols_daily} XP
+          </p>
+        </div>
+      )}
+    </GlassCard>
+  );
+};
+
+// ============ SPRINTS OVERVIEW ============
+
+const SprintsOverviewWidget = ({ sprints, onViewSprint }) => {
+  const activeSprints = sprints.filter(s => s.status === 'active');
+  const completedSprints = sprints.filter(s => s.status === 'completed');
+  
+  return (
+    <GlassCard className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="font-semibold text-white">Sprints</h3>
+          <p className="text-xs text-white/50">{activeSprints.length} ativos, {completedSprints.length} completados</p>
+        </div>
+        <Kanban className="w-5 h-5 text-primary" />
+      </div>
+      
+      <div className="space-y-3">
+        {sprints.slice(0, 3).map(sprint => {
+          const archetype = getArchetypeByKey(sprint.archetype);
+          return (
+            <button
+              key={sprint.id}
+              onClick={() => onViewSprint(sprint.id)}
+              className="w-full p-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/15 transition-all text-left"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-white">{sprint.title}</span>
+                <Badge color={sprint.status === 'active' ? '#10b981' : '#6b7280'}>
+                  {sprint.status === 'active' ? 'Ativo' : 'Completo'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-white/50">
+                {archetype && <span>{archetype.icon} {archetype.name}</span>}
+                <span>•</span>
+                <span>{sprint.tasks_count || 0} tarefas</span>
+              </div>
+            </button>
+          );
+        })}
+        
+        {sprints.length === 0 && (
+          <p className="text-center text-white/40 py-4 text-sm">
+            Nenhum sprint criado ainda
+          </p>
+        )}
+      </div>
+      
+      <Button variant="secondary" className="w-full mt-4" size="sm">
+        <Plus className="w-4 h-4 mr-2" />
+        Novo Sprint
+      </Button>
+    </GlassCard>
+  );
+};
+
+// ============ AI ASSISTANT WIDGET ============
+
+const AIAssistantWidget = ({ userProfile }) => {
+  const [message, setMessage] = useState('');
+  const [response, setResponse] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const handleAsk = async () => {
+    if (!message.trim() || loading) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: message,
+          context: `Tipo HD: ${userProfile?.hd_type || 'generator'}, Arquétipo: ${userProfile?.archetype || 'hero'}`,
+          type: 'general'
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setResponse(data.response);
+      } else {
+        setResponse('Desculpe, não consegui processar sua pergunta.');
+      }
+    } catch (error) {
+      setResponse('Erro ao conectar com o assistente.');
+    } finally {
+      setLoading(false);
+      setMessage('');
+    }
   };
   
+  return (
+    <GlassCard className="p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-pillar-spiritual flex items-center justify-center">
+          <Bot className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h3 className="font-semibold text-white">Siddha AI</h3>
+          <p className="text-xs text-white/50">Seu guia de desenvolvimento</p>
+        </div>
+      </div>
+      
+      {response && (
+        <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/10">
+          <p className="text-sm text-white/80 whitespace-pre-wrap">{response}</p>
+        </div>
+      )}
+      
+      <div className="flex gap-2">
+        <Input
+          placeholder="Pergunte sobre sua jornada..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleAsk()}
+          className="flex-1"
+        />
+        <Button onClick={handleAsk} loading={loading} size="icon">
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+    </GlassCard>
+  );
+};
+
+// ============ AUTH PAGE ============
+
+const AuthPage = ({ onAuthSuccess }) => {
+  const [mode, setMode] = useState('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  
+  const supabase = createClient();
+  
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      onAuthSuccess(data.user);
+    } catch (err) {
+      setError(err.message || 'Failed to sign in');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      
+      if (error) throw error;
+      
+      if (data.user && !data.user.confirmed_at) {
+        setMessage('Check your email for the confirmation link!');
+      } else {
+        onAuthSuccess(data.user);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to sign up');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <div className="min-h-screen bg-void flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-pillar-spiritual flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-white">Siddha Code</h1>
+          <p className="text-white/50 mt-2">Life Operating System</p>
+        </div>
+        
+        <GlassCard className="p-8">
+          <div className="flex mb-6 bg-white/5 rounded-lg p-1">
+            <button
+              onClick={() => { setMode('signin'); setError(''); setMessage(''); }}
+              className={cn(
+                'flex-1 py-2 rounded-md text-sm font-medium transition-all',
+                mode === 'signin' ? 'bg-primary text-white' : 'text-white/60 hover:text-white'
+              )}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => { setMode('signup'); setError(''); setMessage(''); }}
+              className={cn(
+                'flex-1 py-2 rounded-md text-sm font-medium transition-all',
+                mode === 'signup' ? 'bg-primary text-white' : 'text-white/60 hover:text-white'
+              )}
+            >
+              Sign Up
+            </button>
+          </div>
+          
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-400" />
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+          
+          {message && (
+            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+              <p className="text-sm text-green-400">{message}</p>
+            </div>
+          )}
+          
+          <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp} className="space-y-4">
+            <Input label="Email" type="email" icon={Mail} placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            
+            <div className="relative">
+              <Input label="Password" type={showPassword ? 'text' : 'password'} icon={Lock} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-9 text-white/30 hover:text-white/60">
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+            
+            {mode === 'signup' && (
+              <Input label="Confirm Password" type={showPassword ? 'text' : 'password'} icon={Lock} placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            )}
+            
+            <Button type="submit" className="w-full" size="lg" loading={loading}>
+              {mode === 'signin' ? 'Sign In' : 'Create Account'}
+            </Button>
+          </form>
+          
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <Button type="button" variant="secondary" className="w-full" onClick={() => onAuthSuccess({ id: 'demo-user', email: 'demo@siddhacode.com' })}>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Try Demo Mode
+            </Button>
+            <p className="text-xs text-white/30 text-center mt-2">Explore todas as funcionalidades</p>
+          </div>
+        </GlassCard>
+      </div>
+    </div>
+  );
+};
+
+// ============ DASHBOARD PAGE ============
+
+const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprints }) => {
+  const [protocolTab, setProtocolTab] = useState('daily');
+  const displayName = userProfile?.username || 'Warrior';
+  const today = new Date().toLocaleDateString('pt-BR', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  // Quick stats
+  const completedTasks = tasks.filter(t => t.status === 'wisdom').length;
+  const activeTasks = tasks.filter(t => t.status !== 'wisdom').length;
+  const activeSprints = sprints.filter(s => s.status === 'active').length;
+  
+  return (
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Bem-vindo, {displayName}!</h1>
+          <p className="text-white/50 capitalize">{today}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary">
+            <Calendar className="w-4 h-4 mr-2" />
+            Ver Calendário
+          </Button>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Sprint
+          </Button>
+        </div>
+      </div>
+      
+      {/* Quick Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{(userProfile?.xp || 0).toLocaleString()}</p>
+              <p className="text-xs text-white/50">Total XP</p>
+            </div>
+          </div>
+        </GlassCard>
+        
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+              <Flame className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{userProfile?.streak || 0}</p>
+              <p className="text-xs text-white/50">Dias Streak</p>
+            </div>
+          </div>
+        </GlassCard>
+        
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{completedTasks}</p>
+              <p className="text-xs text-white/50">Completadas</p>
+            </div>
+          </div>
+        </GlassCard>
+        
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+              <Kanban className="w-5 h-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{activeSprints}</p>
+              <p className="text-xs text-white/50">Sprints Ativos</p>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+      
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column */}
+        <div className="space-y-6">
+          <ProtocolsWidget 
+            protocols={protocols} 
+            onToggle={onToggleProtocol} 
+            activeTab={protocolTab}
+            setActiveTab={setProtocolTab}
+          />
+          <SprintsOverviewWidget sprints={sprints} onViewSprint={() => {}} />
+        </div>
+        
+        {/* Right Column */}
+        <div className="space-y-6">
+          <PillarRadarChart userProfile={userProfile} tasks={tasks} />
+          <AIAssistantWidget userProfile={userProfile} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============ SPRINTS PAGE (simplified for now) ============
+
+const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints }) => {
+  const [viewMode, setViewMode] = useState('kanban');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedPillar, setSelectedPillar] = useState(null);
+  
+  const viewTabs = [
+    { id: 'kanban', label: 'Kanban', icon: Kanban },
+    { id: 'timeline', label: 'Timeline', icon: Calendar },
+    { id: 'list', label: 'Lista', icon: BarChart3 },
+  ];
+  
+  const filteredTasks = selectedPillar 
+    ? tasks.filter(t => t.pillar === selectedPillar)
+    : tasks;
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Sprints</h1>
+          <p className="text-white/50">Gerencie seus ciclos de desenvolvimento</p>
+        </div>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nova Tarefa
+        </Button>
+      </div>
+      
+      {/* View Mode Tabs */}
+      <div className="flex items-center justify-between">
+        <Tabs tabs={viewTabs} activeTab={viewMode} onChange={setViewMode} className="w-auto" />
+        
+        {/* Pillar Filter */}
+        <div className="flex gap-2 overflow-x-auto">
+          <button
+            onClick={() => setSelectedPillar(null)}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all',
+              selectedPillar === null ? 'bg-white/20 text-white' : 'bg-white/5 text-white/60'
+            )}
+          >
+            Todos
+          </button>
+          {PILLARS.map(pillar => (
+            <button
+              key={pillar.key}
+              onClick={() => setSelectedPillar(pillar.key)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all',
+                selectedPillar === pillar.key ? '' : 'bg-white/5 text-white/60'
+              )}
+              style={selectedPillar === pillar.key ? {
+                backgroundColor: `${pillar.color}30`,
+                color: pillar.color
+              } : {}}
+            >
+              {pillar.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      {/* Content based on view mode */}
+      {viewMode === 'kanban' && (
+        <KanbanView tasks={filteredTasks} setTasks={setTasks} onUpdateTask={onUpdateTask} userProfile={userProfile} />
+      )}
+      
+      {viewMode === 'timeline' && (
+        <TimelineView tasks={filteredTasks} sprints={sprints} />
+      )}
+      
+      {viewMode === 'list' && (
+        <ListView tasks={filteredTasks} onUpdateTask={onUpdateTask} />
+      )}
+      
+      <CreateTaskModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreateTask={(task) => setTasks(prev => [...prev, { ...task, id: uuidv4(), status: 'potential', gut_check_score: null }])}
+      />
+    </div>
+  );
+};
+
+// Kanban View Component (reusing previous DnD logic)
+const KanbanView = ({ tasks, setTasks, onUpdateTask, userProfile }) => {
+  const [activeId, setActiveId] = useState(null);
+  const [gutCheckTask, setGutCheckTask] = useState(null);
+  const [pendingMove, setPendingMove] = useState(null);
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  
+  const tasksByColumn = useMemo(() => {
+    const result = {};
+    KANBAN_COLUMNS.forEach(col => {
+      result[col.id] = tasks.filter(t => t.status === col.id);
+    });
+    return result;
+  }, [tasks]);
+  
+  const activeTask = useMemo(() => activeId ? tasks.find(t => t.id === activeId) : null, [activeId, tasks]);
+  
+  const handleDragStart = (event) => setActiveId(event.active.id);
+  
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over) return;
+    
+    const draggedTask = tasks.find(t => t.id === active.id);
+    if (!draggedTask) return;
+    
+    const targetColumn = KANBAN_COLUMNS.find(col => col.id === over.id);
+    const targetTask = tasks.find(t => t.id === over.id);
+    let newStatus = draggedTask.status;
+    
+    if (targetColumn) newStatus = targetColumn.id;
+    else if (targetTask) newStatus = targetTask.status;
+    
+    if (newStatus === 'response' && draggedTask.status !== 'response' && !draggedTask.gut_check_score) {
+      setGutCheckTask(draggedTask);
+      setPendingMove(newStatus);
+      return;
+    }
+    
+    if (newStatus !== draggedTask.status) {
+      onUpdateTask({ ...draggedTask, status: newStatus });
+    }
+  };
+  
+  const handleGutCheckConfirm = (score) => {
+    if (gutCheckTask && pendingMove) {
+      onUpdateTask({ ...gutCheckTask, status: pendingMove, gut_check_score: score });
+    }
+    setGutCheckTask(null);
+    setPendingMove(null);
+  };
+  
+  return (
+    <>
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {KANBAN_COLUMNS.map(column => (
+            <DroppableColumn key={column.id} column={column} tasks={tasksByColumn[column.id]}>
+              {tasksByColumn[column.id].map(task => (
+                <SortableTaskCard key={task.id} task={task} />
+              ))}
+            </DroppableColumn>
+          ))}
+        </div>
+        <DragOverlay>{activeTask && <DragOverlayCard task={activeTask} />}</DragOverlay>
+      </DndContext>
+      
+      <GutCheckModal
+        isOpen={!!gutCheckTask}
+        onClose={() => { setGutCheckTask(null); setPendingMove(null); }}
+        onConfirm={handleGutCheckConfirm}
+        task={gutCheckTask}
+        hdType={userProfile?.hd_type || 'generator'}
+      />
+    </>
+  );
+};
+
+// Timeline View
+const TimelineView = ({ tasks, sprints }) => (
+  <GlassCard className="p-6">
+    <div className="space-y-4">
+      {tasks.length === 0 ? (
+        <p className="text-center text-white/40 py-8">Nenhuma tarefa para exibir na timeline</p>
+      ) : (
+        tasks.map((task, idx) => {
+          const pillar = getPillarByKey(task.pillar);
+          return (
+            <div key={task.id} className="flex gap-4">
+              <div className="flex flex-col items-center">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pillar?.color || '#6b7280' }} />
+                {idx < tasks.length - 1 && <div className="w-0.5 flex-1 bg-white/10 my-1" />}
+              </div>
+              <div className="flex-1 pb-4">
+                <p className="text-sm font-medium text-white">{task.title}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge color={pillar?.color || '#6b7280'}>{pillar?.label || task.pillar}</Badge>
+                  <span className="text-xs text-white/40">{getColumnById(task.status)?.label}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  </GlassCard>
+);
+
+// List View
+const ListView = ({ tasks, onUpdateTask }) => (
+  <GlassCard className="divide-y divide-white/5">
+    {tasks.length === 0 ? (
+      <p className="text-center text-white/40 py-8">Nenhuma tarefa</p>
+    ) : (
+      tasks.map(task => {
+        const pillar = getPillarByKey(task.pillar);
+        const column = getColumnById(task.status);
+        return (
+          <div key={task.id} className="p-4 flex items-center gap-4 hover:bg-white/[0.02]">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: column?.color }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{task.title}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge color={pillar?.color || '#6b7280'}>{pillar?.label}</Badge>
+                {task.gut_check_score && <span className="text-xs text-white/40">Gut: {task.gut_check_score}/10</span>}
+              </div>
+            </div>
+            <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${column?.color}20`, color: column?.color }}>
+              {column?.label}
+            </span>
+          </div>
+        );
+      })
+    )}
+  </GlassCard>
+);
+
+// DnD Components (simplified)
+const SortableTaskCard = ({ task }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   const pillar = getPillarByKey(task.pillar);
   
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        'bg-surface border border-white/10 rounded-lg p-4 hover:border-white/20 transition-all',
-        isDragging && 'shadow-lg shadow-primary/20 border-primary/50'
-      )}
-    >
+    <div ref={setNodeRef} style={style} className={cn('bg-surface border border-white/10 rounded-lg p-4 hover:border-white/20 transition-all', isDragging && 'shadow-lg shadow-primary/20 border-primary/50')}>
       <div className="flex items-start gap-3">
-        <div 
-          {...attributes} 
-          {...listeners}
-          className="mt-1 cursor-grab active:cursor-grabbing touch-none"
-        >
+        <div {...attributes} {...listeners} className="mt-1 cursor-grab active:cursor-grabbing touch-none">
           <GripVertical className="w-4 h-4 text-white/30 hover:text-white/60" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm text-white font-medium mb-2">{task.title}</p>
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge color={pillar?.color || '#6b7280'}>
-              {pillar?.label || task.pillar}
-            </Badge>
-            {task.gut_check_score && (
-              <span className="text-xs text-white/50">
-                Gut: {task.gut_check_score}/10
-              </span>
-            )}
+            <Badge color={pillar?.color || '#6b7280'}>{pillar?.label || task.pillar}</Badge>
+            {task.gut_check_score && <span className="text-xs text-white/50">Gut: {task.gut_check_score}/10</span>}
           </div>
-          {task.xp_reward > 0 && (
-            <p className="text-xs text-primary mt-2">+{task.xp_reward} XP</p>
-          )}
+          {task.xp_reward > 0 && <p className="text-xs text-primary mt-2">+{task.xp_reward} XP</p>}
         </div>
       </div>
     </div>
@@ -612,43 +1246,17 @@ const SortableTaskCard = ({ task, onMove }) => {
 };
 
 const DroppableColumn = ({ column, tasks, children }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: column.id,
-  });
-  
+  const { setNodeRef, isOver } = useDroppable({ id: column.id });
   return (
     <div className="flex-1 min-w-[300px]">
       <div className="flex items-center gap-3 mb-4">
-        <div 
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: column.color }}
-        />
+        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: column.color }} />
         <h3 className="font-semibold text-white">{column.label}</h3>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
-          {tasks.length}
-        </span>
-        {column.requiresGutCheck && (
-          <span className="text-xs text-yellow-500">Gut Check</span>
-        )}
+        <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">{tasks.length}</span>
       </div>
-      
-      <GlassCard 
-        ref={setNodeRef}
-        className={cn(
-          'p-3 min-h-[400px] transition-all duration-200',
-          isOver && 'ring-2 ring-primary/50 bg-primary/5'
-        )}
-      >
+      <GlassCard ref={setNodeRef} className={cn('p-3 min-h-[400px] transition-all duration-200', isOver && 'ring-2 ring-primary/50 bg-primary/5')}>
         <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3">
-            {tasks.length === 0 ? (
-              <div className="py-8 text-center text-white/30 text-sm">
-                {isOver ? 'Drop here!' : 'No tasks'}
-              </div>
-            ) : (
-              children
-            )}
-          </div>
+          <div className="space-y-3">{tasks.length === 0 ? <div className="py-8 text-center text-white/30 text-sm">{isOver ? 'Solte aqui!' : 'Sem tarefas'}</div> : children}</div>
         </SortableContext>
       </GlassCard>
     </div>
@@ -657,30 +1265,25 @@ const DroppableColumn = ({ column, tasks, children }) => {
 
 const DragOverlayCard = ({ task }) => {
   const pillar = getPillarByKey(task.pillar);
-  
   return (
     <div className="bg-surface border-2 border-primary rounded-lg p-4 shadow-xl shadow-primary/20 w-[280px]">
       <div className="flex items-start gap-3">
         <GripVertical className="w-4 h-4 text-primary mt-1" />
         <div className="flex-1">
           <p className="text-sm text-white font-medium mb-2">{task.title}</p>
-          <Badge color={pillar?.color || '#6b7280'}>
-            {pillar?.label || task.pillar}
-          </Badge>
+          <Badge color={pillar?.color || '#6b7280'}>{pillar?.label || task.pillar}</Badge>
         </div>
       </div>
     </div>
   );
 };
 
-// ============ GUT CHECK MODAL ============
-
+// Gut Check Modal
 const GutCheckModal = ({ isOpen, onClose, onConfirm, task, hdType }) => {
   const [score, setScore] = useState(7);
-  
   if (!isOpen) return null;
-  
-  const prompt = GUT_CHECK_PROMPTS[hdType] || GUT_CHECK_PROMPTS.default;
+  const hdTypeData = getHDTypeByKey(hdType);
+  const prompt = hdTypeData?.gutCheckPrompt || 'De 1 a 10, quão alinhado você se sente com esta tarefa?';
   
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -690,222 +1293,37 @@ const GutCheckModal = ({ isOpen, onClose, onConfirm, task, hdType }) => {
             <Target className="w-8 h-8 text-kanban-response" />
           </div>
           <h3 className="text-xl font-semibold text-white">Gut Check</h3>
-          <p className="text-white/50 text-sm mt-2">Moving to "Resposta" requires validation</p>
+          <p className="text-white/50 text-sm mt-2">Validação para mover para "Resposta"</p>
         </div>
         
         <div className="p-4 rounded-lg bg-white/5 border border-white/10 mb-6">
           <p className="text-sm text-white/80 italic">"{prompt}"</p>
+          {hdTypeData && (
+            <p className="text-xs mt-2" style={{ color: hdTypeData.color }}>
+              Sua estratégia: {hdTypeData.strategy}
+            </p>
+          )}
         </div>
         
         <div className="mb-6">
           <div className="flex justify-between text-sm mb-2">
-            <span className="text-white/50">Alignment Score</span>
-            <span className={cn(
-              'font-bold',
-              score >= 7 ? 'text-kanban-response' : 'text-yellow-500'
-            )}>
-              {score}/10
-            </span>
+            <span className="text-white/50">Nível de Alinhamento</span>
+            <span className={cn('font-bold', score >= 7 ? 'text-kanban-response' : 'text-yellow-500')}>{score}/10</span>
           </div>
-          <input
-            type="range"
-            min="1"
-            max="10"
-            value={score}
-            onChange={(e) => setScore(parseInt(e.target.value))}
-            className="w-full accent-primary"
-          />
-          <div className="flex justify-between text-xs text-white/30 mt-1">
-            <span>Not aligned</span>
-            <span>Fully aligned</span>
-          </div>
+          <input type="range" min="1" max="10" value={score} onChange={(e) => setScore(parseInt(e.target.value))} className="w-full accent-primary" />
         </div>
         
         {score < 7 && (
           <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-            <p className="text-sm text-yellow-400">
-              Score below 7 - Consider if this task truly aligns with your energy.
-            </p>
+            <p className="text-sm text-yellow-400">Score abaixo de 7 - Considere se esta tarefa realmente se alinha com sua energia.</p>
           </div>
         )}
         
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button className="flex-1" onClick={() => onConfirm(score)}>
-            Confirm Move
-          </Button>
+          <Button variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+          <Button className="flex-1" onClick={() => onConfirm(score)}>Confirmar</Button>
         </div>
       </GlassCard>
-    </div>
-  );
-};
-
-// ============ PAGE COMPONENTS ============
-
-const StatsBar = ({ userProfile }) => {
-  const currentRank = getRankByXp(userProfile?.xp || 0);
-  const rankProgress = getRankProgress(userProfile?.xp || 0);
-  const nextRank = getNextRank(userProfile?.xp || 0);
-  
-  const stats = [
-    { label: 'Total XP', value: (userProfile?.xp || 0).toLocaleString(), icon: Zap, color: '#8b5cf6' },
-    { label: 'Streak', value: `${userProfile?.streak || 0} days`, icon: Flame, color: '#f59e0b' },
-    { label: 'Rank', value: currentRank.title, icon: Trophy, color: currentRank.color },
-  ];
-  
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {stats.map((stat, idx) => (
-        <GlassCard key={idx} className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-white/50 mb-1">{stat.label}</p>
-              <p className="text-xl font-bold" style={{ color: stat.color }}>
-                {stat.value}
-              </p>
-            </div>
-            <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: `${stat.color}20` }}
-            >
-              <stat.icon className="w-6 h-6" style={{ color: stat.color }} />
-            </div>
-          </div>
-          {stat.label === 'Rank' && nextRank && (
-            <div className="mt-3">
-              <Progress value={rankProgress} color={stat.color} />
-              <p className="text-xs text-white/40 mt-1">
-                {Math.round(rankProgress)}% to {nextRank.title}
-              </p>
-            </div>
-          )}
-        </GlassCard>
-      ))}
-    </div>
-  );
-};
-
-const ProtocolsPanel = ({ protocols, onToggle }) => {
-  const completedCount = protocols.filter(p => p.is_checked).length;
-  const totalCount = protocols.length;
-  const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-  
-  return (
-    <GlassCard className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="font-semibold text-white">Daily Protocols</h3>
-          <p className="text-xs text-white/50">{completedCount}/{totalCount} completed</p>
-        </div>
-        <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-          <Target className="w-6 h-6 text-primary" />
-        </div>
-      </div>
-      
-      <Progress value={progress} className="mb-4" />
-      
-      <div className="space-y-2">
-        {protocols.map(protocol => (
-          <button
-            key={protocol.id}
-            onClick={() => onToggle(protocol.id)}
-            className={cn(
-              'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
-              protocol.is_checked 
-                ? 'bg-primary/10 border border-primary/30'
-                : 'bg-white/[0.02] border border-white/5 hover:border-white/10'
-            )}
-          >
-            {protocol.is_checked ? (
-              <CheckCircle2 className="w-5 h-5 text-primary" />
-            ) : (
-              <Circle className="w-5 h-5 text-white/30" />
-            )}
-            <span className={cn(
-              'text-sm',
-              protocol.is_checked ? 'text-white' : 'text-white/70'
-            )}>
-              {protocol.name}
-            </span>
-          </button>
-        ))}
-      </div>
-      
-      {completedCount === totalCount && totalCount > 0 && (
-        <div className="mt-4 p-3 rounded-lg bg-primary/20 border border-primary/30 text-center">
-          <p className="text-sm text-primary font-medium">
-            All protocols completed! +{XP_REWARDS.all_protocols_daily} XP
-          </p>
-        </div>
-      )}
-    </GlassCard>
-  );
-};
-
-const PillarsOverview = ({ userProfile }) => {
-  const stats = userProfile?.pillars_stats || {};
-  
-  return (
-    <GlassCard className="p-6">
-      <h3 className="font-semibold text-white mb-4">7 Pillars of Life</h3>
-      <div className="space-y-3">
-        {PILLARS.map(pillar => {
-          const value = stats[pillar.key] || 0;
-          const maxValue = 50;
-          return (
-            <div key={pillar.key}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: pillar.color }}
-                  />
-                  <span className="text-sm text-white/70">{pillar.label}</span>
-                </div>
-                <span className="text-xs text-white/50">{value} tasks</span>
-              </div>
-              <Progress value={value} max={maxValue} color={pillar.color} />
-            </div>
-          );
-        })}
-      </div>
-    </GlassCard>
-  );
-};
-
-const DashboardPage = ({ userProfile, protocols, onToggleProtocol }) => {
-  const displayName = userProfile?.username || 'Warrior';
-  const today = new Date().toLocaleDateString('pt-BR', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-  
-  return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Welcome back, {displayName}!</h1>
-          <p className="text-white/50 capitalize">{today}</p>
-        </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          New Sprint
-        </Button>
-      </div>
-      
-      {/* Stats Bar */}
-      <StatsBar userProfile={userProfile} />
-      
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ProtocolsPanel protocols={protocols} onToggle={onToggleProtocol} />
-        <PillarsOverview userProfile={userProfile} />
-      </div>
     </div>
   );
 };
@@ -914,24 +1332,14 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol }) => {
 const CreateTaskModal = ({ isOpen, onClose, onCreateTask }) => {
   const [title, setTitle] = useState('');
   const [pillar, setPillar] = useState('physical');
-  const [loading, setLoading] = useState(false);
-  
   if (!isOpen) return null;
   
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    
-    setLoading(true);
-    await onCreateTask({
-      title: title.trim(),
-      pillar,
-      xp_reward: XP_REWARDS.task_complete
-    });
-    
+    onCreateTask({ title: title.trim(), pillar, xp_reward: XP_REWARDS.task_complete });
     setTitle('');
     setPillar('physical');
-    setLoading(false);
     onClose();
   };
   
@@ -939,54 +1347,26 @@ const CreateTaskModal = ({ isOpen, onClose, onCreateTask }) => {
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <GlassCard className="w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white">Create New Task</h3>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg">
-            <X className="w-5 h-5" />
-          </button>
+          <h3 className="text-lg font-semibold text-white">Nova Tarefa</h3>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5" /></button>
         </div>
-        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Task Title"
-            placeholder="Enter task title..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-          />
-          
+          <Input label="Título" placeholder="Digite o título da tarefa..." value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
           <div>
-            <label className="block text-sm text-white/70 mb-2">Pillar</label>
+            <label className="block text-sm text-white/70 mb-2">Pilar</label>
             <div className="grid grid-cols-2 gap-2">
               {PILLARS.map(p => (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => setPillar(p.key)}
-                  className={cn(
-                    'px-3 py-2 rounded-lg text-sm text-left transition-all',
-                    pillar === p.key
-                      ? 'border-2'
-                      : 'bg-white/5 border border-white/10 hover:border-white/20'
-                  )}
-                  style={pillar === p.key ? {
-                    backgroundColor: `${p.color}20`,
-                    borderColor: p.color,
-                    color: p.color
-                  } : {}}
-                >
+                <button key={p.key} type="button" onClick={() => setPillar(p.key)}
+                  className={cn('px-3 py-2 rounded-lg text-sm text-left transition-all', pillar === p.key ? 'border-2' : 'bg-white/5 border border-white/10')}
+                  style={pillar === p.key ? { backgroundColor: `${p.color}20`, borderColor: p.color, color: p.color } : {}}>
                   {p.label}
                 </button>
               ))}
             </div>
           </div>
-          
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1" loading={loading}>
-              Create Task
-            </Button>
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" className="flex-1">Criar Tarefa</Button>
           </div>
         </form>
       </GlassCard>
@@ -994,329 +1374,352 @@ const CreateTaskModal = ({ isOpen, onClose, onCreateTask }) => {
   );
 };
 
-// Pillar Filter Component
-const PillarFilter = ({ selected, onSelect }) => {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        onClick={() => onSelect(null)}
-        className={cn(
-          'px-3 py-1.5 rounded-full text-sm transition-all',
-          selected === null
-            ? 'bg-white/20 text-white'
-            : 'bg-white/5 text-white/60 hover:bg-white/10'
-        )}
-      >
-        All Pillars
-      </button>
-      {PILLARS.map(pillar => (
-        <button
-          key={pillar.key}
-          onClick={() => onSelect(pillar.key)}
-          className={cn(
-            'px-3 py-1.5 rounded-full text-sm transition-all',
-            selected === pillar.key
-              ? 'text-white'
-              : 'bg-white/5 text-white/60 hover:bg-white/10'
-          )}
-          style={selected === pillar.key ? {
-            backgroundColor: `${pillar.color}30`,
-            color: pillar.color
-          } : {}}
-        >
-          {pillar.label}
-        </button>
-      ))}
-    </div>
-  );
-};
+// ============ JOURNAL PAGE ============
 
-// Sprints Page with DnD
-const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask }) => {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedPillar, setSelectedPillar] = useState(null);
-  const [activeId, setActiveId] = useState(null);
-  const [gutCheckTask, setGutCheckTask] = useState(null);
-  const [pendingMove, setPendingMove] = useState(null);
+const JournalPage = ({ journals, setJournals, userProfile }) => {
+  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newEntry, setNewEntry] = useState({ title: '', content: '', tags: [] });
+  const [searchQuery, setSearchQuery] = useState('');
   
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+  const filteredJournals = journals.filter(j => 
+    j.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    j.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  const filteredTasks = useMemo(() => {
-    return selectedPillar 
-      ? tasks.filter(t => t.pillar === selectedPillar)
-      : tasks;
-  }, [tasks, selectedPillar]);
-  
-  const tasksByColumn = useMemo(() => {
-    const result = {};
-    KANBAN_COLUMNS.forEach(col => {
-      result[col.id] = filteredTasks.filter(t => t.status === col.id);
-    });
-    return result;
-  }, [filteredTasks]);
-  
-  const activeTask = useMemo(() => {
-    return activeId ? tasks.find(t => t.id === activeId) : null;
-  }, [activeId, tasks]);
-  
-  const handleDragStart = (event) => {
-    setActiveId(event.active.id);
-  };
-  
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    setActiveId(null);
-    
-    if (!over) return;
-    
-    const activeTask = tasks.find(t => t.id === active.id);
-    if (!activeTask) return;
-    
-    // Check if dropped on a column
-    const targetColumn = KANBAN_COLUMNS.find(col => col.id === over.id);
-    const targetTask = tasks.find(t => t.id === over.id);
-    
-    let newStatus = activeTask.status;
-    
-    if (targetColumn) {
-      newStatus = targetColumn.id;
-    } else if (targetTask) {
-      newStatus = targetTask.status;
-    }
-    
-    // If moving to "response" column, require gut check
-    if (newStatus === 'response' && activeTask.status !== 'response' && !activeTask.gut_check_score) {
-      setGutCheckTask(activeTask);
-      setPendingMove(newStatus);
-      return;
-    }
-    
-    if (newStatus !== activeTask.status) {
-      const updatedTask = { ...activeTask, status: newStatus };
-      onUpdateTask(updatedTask);
-    }
-  };
-  
-  const handleGutCheckConfirm = (score) => {
-    if (gutCheckTask && pendingMove) {
-      const updatedTask = { 
-        ...gutCheckTask, 
-        status: pendingMove,
-        gut_check_score: score
-      };
-      onUpdateTask(updatedTask);
-    }
-    setGutCheckTask(null);
-    setPendingMove(null);
-  };
-  
-  const handleCreateTask = async (taskData) => {
-    const newTask = {
+  const handleCreateEntry = () => {
+    if (!newEntry.title.trim() || !newEntry.content.trim()) return;
+    const entry = {
       id: uuidv4(),
-      ...taskData,
-      status: 'potential',
-      gut_check_score: null,
-      created_at: new Date().toISOString()
+      ...newEntry,
+      created_at: new Date().toISOString(),
+      linked_entries: []
     };
-    setTasks(prev => [...prev, newTask]);
+    setJournals(prev => [entry, ...prev]);
+    setNewEntry({ title: '', content: '', tags: [] });
+    setIsCreating(false);
   };
   
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Sprint Kanban</h1>
-          <p className="text-white/50">Human Design themed task management</p>
+          <h1 className="text-2xl font-bold text-white">Journal</h1>
+          <p className="text-white/50">Seu segundo cérebro</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button onClick={() => setIsCreating(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Task
+          Nova Entrada
         </Button>
       </div>
       
-      {/* Pillar Filter */}
-      <GlassCard className="p-4">
-        <PillarFilter selected={selectedPillar} onSelect={setSelectedPillar} />
-      </GlassCard>
-      
-      {/* Kanban Board with DnD */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {KANBAN_COLUMNS.map(column => (
-            <DroppableColumn 
-              key={column.id}
-              column={column}
-              tasks={tasksByColumn[column.id]}
-            >
-              {tasksByColumn[column.id].map(task => (
-                <SortableTaskCard key={task.id} task={task} />
-              ))}
-            </DroppableColumn>
-          ))}
-        </div>
-        
-        <DragOverlay>
-          {activeTask && <DragOverlayCard task={activeTask} />}
-        </DragOverlay>
-      </DndContext>
-      
-      {/* Create Task Modal */}
-      <CreateTaskModal 
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreateTask={handleCreateTask}
-      />
-      
-      {/* Gut Check Modal */}
-      <GutCheckModal
-        isOpen={!!gutCheckTask}
-        onClose={() => { setGutCheckTask(null); setPendingMove(null); }}
-        onConfirm={handleGutCheckConfirm}
-        task={gutCheckTask}
-        hdType={userProfile?.hd_type || 'generator'}
-      />
-    </div>
-  );
-};
-
-// Journal Page
-const JournalPage = () => {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Journal</h1>
-        <p className="text-white/50">Reflect on your journey</p>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+        <input
+          type="text"
+          placeholder="Buscar entradas..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
+        />
       </div>
       
-      <GlassCard className="p-8 text-center">
-        <BookOpen className="w-12 h-12 text-white/30 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-white mb-2">Coming Soon</h3>
-        <p className="text-white/50 max-w-md mx-auto">
-          The journal feature will allow you to log reflections, track your Not-Self moments, 
-          and gain deeper insights into your Human Design journey.
-        </p>
-      </GlassCard>
+      {/* Journal Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredJournals.map(entry => (
+          <GlassCard
+            key={entry.id}
+            className="p-4 cursor-pointer hover:border-white/20 transition-all"
+            onClick={() => setSelectedEntry(entry)}
+          >
+            <h3 className="font-semibold text-white mb-2 line-clamp-1">{entry.title}</h3>
+            <p className="text-sm text-white/60 line-clamp-3 mb-3">{entry.content}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1">
+                {entry.tags?.slice(0, 2).map(tag => (
+                  <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+              <span className="text-xs text-white/40">
+                {new Date(entry.created_at).toLocaleDateString('pt-BR')}
+              </span>
+            </div>
+          </GlassCard>
+        ))}
+        
+        {filteredJournals.length === 0 && (
+          <div className="col-span-full">
+            <GlassCard className="p-8 text-center">
+              <BookOpen className="w-12 h-12 text-white/30 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">Nenhuma entrada</h3>
+              <p className="text-white/50 mb-4">Comece a documentar sua jornada</p>
+              <Button onClick={() => setIsCreating(true)}>Criar Primeira Entrada</Button>
+            </GlassCard>
+          </div>
+        )}
+      </div>
+      
+      {/* Create Entry Modal */}
+      {isCreating && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <GlassCard className="w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-white">Nova Entrada</h3>
+              <button onClick={() => setIsCreating(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <Input
+                label="Título"
+                placeholder="Título da entrada..."
+                value={newEntry.title}
+                onChange={(e) => setNewEntry(prev => ({ ...prev, title: e.target.value }))}
+              />
+              
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Conteúdo</label>
+                <textarea
+                  placeholder="Escreva seus pensamentos... Use [[link]] para conectar outras entradas."
+                  value={newEntry.content}
+                  onChange={(e) => setNewEntry(prev => ({ ...prev, content: e.target.value }))}
+                  className="w-full h-48 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary resize-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Tags (separadas por vírgula)</label>
+                <input
+                  placeholder="reflexão, human design, sprint"
+                  value={newEntry.tags?.join(', ')}
+                  onChange={(e) => setNewEntry(prev => ({ ...prev, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) }))}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button type="button" variant="secondary" className="flex-1" onClick={() => setIsCreating(false)}>Cancelar</Button>
+                <Button className="flex-1" onClick={handleCreateEntry}>Salvar Entrada</Button>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+      
+      {/* View Entry Modal */}
+      {selectedEntry && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <GlassCard className="w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">{selectedEntry.title}</h2>
+              <button onClick={() => setSelectedEntry(null)} className="p-2 hover:bg-white/10 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="prose prose-invert max-w-none">
+              <p className="text-white/80 whitespace-pre-wrap">{selectedEntry.content}</p>
+            </div>
+            
+            {selectedEntry.tags?.length > 0 && (
+              <div className="flex gap-2 mt-6 pt-4 border-t border-white/10">
+                {selectedEntry.tags.map(tag => (
+                  <span key={tag} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+              <span className="text-xs text-white/40">
+                Criado em {new Date(selectedEntry.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </span>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm"><Edit3 className="w-4 h-4 mr-1" /> Editar</Button>
+                <Button variant="danger" size="sm"><Trash2 className="w-4 h-4 mr-1" /> Excluir</Button>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
     </div>
   );
 };
 
-// Profile Page
-const ProfilePage = ({ user, userProfile }) => {
+// ============ PROFILE PAGE ============
+
+const ProfilePage = ({ user, userProfile, setUserProfile }) => {
   const currentRank = getRankByXp(userProfile?.xp || 0);
   const displayName = userProfile?.username || user?.email?.split('@')[0] || 'User';
-  const stats = userProfile?.pillars_stats || {};
+  const hdType = getHDTypeByKey(userProfile?.hd_type);
+  const archetype = getArchetypeByKey(userProfile?.archetype);
+  const zodiac = ZODIAC_SIGNS.find(z => z.key === userProfile?.zodiac);
+  
+  const socialLinks = [
+    { key: 'instagram', icon: Instagram, label: 'Instagram' },
+    { key: 'twitter', icon: Twitter, label: 'Twitter/X' },
+    { key: 'linkedin', icon: Linkedin, label: 'LinkedIn' },
+    { key: 'github', icon: Github, label: 'GitHub' },
+  ];
   
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Profile</h1>
-        <p className="text-white/50">Your Siddha journey stats</p>
+        <h1 className="text-2xl font-bold text-white">Perfil</h1>
+        <p className="text-white/50">Sua identidade Siddha</p>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card */}
-        <GlassCard className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-pillar-cultural flex items-center justify-center">
-              <span className="text-3xl font-bold">{displayName[0].toUpperCase()}</span>
+        <GlassCard className="p-6 lg:col-span-1">
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-pillar-cultural flex items-center justify-center mx-auto mb-4">
+              <span className="text-4xl font-bold">{displayName[0]?.toUpperCase()}</span>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">{displayName}</h2>
-              <p className="text-white/50 text-sm">{user?.email}</p>
-              <Badge color={currentRank.color} className="mt-2">
-                {currentRank.title}
-              </Badge>
+            <h2 className="text-xl font-bold text-white">{displayName}</h2>
+            <p className="text-white/50 text-sm">{user?.email}</p>
+            <Badge color={currentRank.color} className="mt-2">{currentRank.title}</Badge>
+            
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="p-3 rounded-lg bg-white/[0.02]">
+                <p className="text-2xl font-bold text-primary">{(userProfile?.xp || 0).toLocaleString()}</p>
+                <p className="text-xs text-white/50">XP Total</p>
+              </div>
+              <div className="p-3 rounded-lg bg-white/[0.02]">
+                <p className="text-2xl font-bold text-orange-500">{userProfile?.streak || 0}</p>
+                <p className="text-xs text-white/50">Dias Streak</p>
+              </div>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
-              <p className="text-xs text-white/50 mb-1">Total XP</p>
-              <p className="text-2xl font-bold text-primary">{(userProfile?.xp || 0).toLocaleString()}</p>
-            </div>
-            <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
-              <p className="text-xs text-white/50 mb-1">Streak</p>
-              <p className="text-2xl font-bold text-orange-500">{userProfile?.streak || 0} days</p>
+          {/* Social Links */}
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <h3 className="text-sm font-semibold text-white mb-3">Redes Sociais</h3>
+            <div className="space-y-2">
+              {socialLinks.map(social => (
+                <div key={social.key} className="flex items-center gap-3 p-2 rounded-lg bg-white/[0.02]">
+                  <social.icon className="w-4 h-4 text-white/50" />
+                  <input
+                    type="text"
+                    placeholder={`@seu_${social.key}`}
+                    value={userProfile?.social_links?.[social.key] || ''}
+                    onChange={(e) => setUserProfile(prev => ({
+                      ...prev,
+                      social_links: { ...(prev?.social_links || {}), [social.key]: e.target.value }
+                    }))}
+                    className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </GlassCard>
         
-        {/* Human Design Info */}
-        <GlassCard className="p-6">
-          <h3 className="font-semibold text-white mb-4">Human Design</h3>
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
-              <p className="text-xs text-white/50 mb-1">Type</p>
-              <p className="text-lg font-semibold text-primary capitalize">
-                {(userProfile?.hd_type || 'generator')?.replace('_', ' ')}
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <p className="text-sm text-white/70">
-                <span className="text-primary font-medium">Gut Check Prompt:</span>
-                <br />
-                {GUT_CHECK_PROMPTS[userProfile?.hd_type] || GUT_CHECK_PROMPTS.default}
-              </p>
-            </div>
-          </div>
-        </GlassCard>
-      </div>
-      
-      {/* Pillars Stats */}
-      <GlassCard className="p-6">
-        <h3 className="font-semibold text-white mb-4">Pillar Progress</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-          {PILLARS.map(pillar => {
-            const value = stats[pillar.key] || 0;
-            return (
-              <div key={pillar.key} className="text-center">
-                <div 
-                  className="w-16 h-16 rounded-2xl mx-auto mb-2 flex items-center justify-center"
-                  style={{ backgroundColor: `${pillar.color}20` }}
-                >
-                  <span className="text-xl font-bold" style={{ color: pillar.color }}>
-                    {value}
-                  </span>
+        {/* Human Design & Archetype */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Human Design */}
+          <GlassCard className="p-6">
+            <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5 text-primary" />
+              Human Design
+            </h3>
+            
+            {hdType ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
+                  <p className="text-xs text-white/50 mb-1">Tipo Energético</p>
+                  <p className="text-lg font-semibold" style={{ color: hdType.color }}>{hdType.name}</p>
+                  <p className="text-xs text-white/40 mt-1">{hdType.percentage} da população</p>
                 </div>
-                <p className="text-xs text-white/70">{pillar.label}</p>
+                <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
+                  <p className="text-xs text-white/50 mb-1">Estratégia</p>
+                  <p className="text-lg font-semibold text-white">{hdType.strategy}</p>
+                </div>
+                <div className="md:col-span-2 p-4 rounded-lg" style={{ backgroundColor: `${hdType.color}10`, borderColor: `${hdType.color}30`, borderWidth: 1 }}>
+                  <p className="text-sm text-white/80">{hdType.description}</p>
+                </div>
               </div>
-            );
-          })}
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-white/50 mb-4">Configure seu Human Design para personalizar sua experiência</p>
+                <Button>Configurar Human Design</Button>
+              </div>
+            )}
+          </GlassCard>
+          
+          {/* Archetype */}
+          <GlassCard className="p-6">
+            <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary" />
+              Arquétipo Atual
+            </h3>
+            
+            {archetype ? (
+              <div className="flex items-start gap-4">
+                <div className="text-4xl">{archetype.icon}</div>
+                <div>
+                  <h4 className="text-lg font-semibold text-white">{archetype.name}</h4>
+                  <p className="text-sm text-white/60 italic">"{archetype.motto}"</p>
+                  <p className="text-sm text-white/50 mt-2">{archetype.description}</p>
+                  <div className="flex gap-2 mt-3">
+                    {archetype.focus.map(f => {
+                      const p = getPillarByKey(f);
+                      return p ? <Badge key={f} color={p.color}>{p.label}</Badge> : null;
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-white/50 mb-4">Escolha um arquétipo para guiar seu próximo Sprint</p>
+                <Button>Escolher Arquétipo</Button>
+              </div>
+            )}
+          </GlassCard>
+          
+          {/* Pillar Progress */}
+          <GlassCard className="p-6">
+            <h3 className="font-semibold text-white mb-4">Progresso nos Pilares</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+              {PILLARS.map(pillar => {
+                const value = userProfile?.pillars_stats?.[pillar.key] || 0;
+                return (
+                  <div key={pillar.key} className="text-center">
+                    <div className="w-14 h-14 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: `${pillar.color}20` }}>
+                      <span className="text-lg font-bold" style={{ color: pillar.color }}>{value}</span>
+                    </div>
+                    <p className="text-xs text-white/70">{pillar.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </GlassCard>
         </div>
-      </GlassCard>
+      </div>
     </div>
   );
 };
 
 // ============ MAIN APP ============
 
-// Default data for new users
 const DEFAULT_PROTOCOLS = [
-  { id: uuidv4(), name: 'Morning Routine', is_checked: false },
-  { id: uuidv4(), name: 'Hydration (8 glasses)', is_checked: false },
-  { id: uuidv4(), name: 'Meditation', is_checked: false },
-  { id: uuidv4(), name: 'Exercise', is_checked: false },
-  { id: uuidv4(), name: 'Learning Time', is_checked: false },
-  { id: uuidv4(), name: 'Evening Review', is_checked: false },
+  { id: uuidv4(), name: 'Rotina Matinal', is_checked: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Hidratação (8 copos)', is_checked: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Meditação', is_checked: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Exercício', is_checked: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Tempo de Aprendizado', is_checked: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Revisão Semanal', is_checked: false, frequency: 'weekly' },
+  { id: uuidv4(), name: 'Planejamento de Sprint', is_checked: false, frequency: 'weekly' },
+  { id: uuidv4(), name: 'Review Mensal', is_checked: false, frequency: 'monthly' },
 ];
 
 const DEFAULT_TASKS = [
-  { id: uuidv4(), title: 'Welcome to Siddha Code!', pillar: 'spiritual', status: 'potential', gut_check_score: null, xp_reward: 10 },
+  { id: uuidv4(), title: 'Bem-vindo ao Siddha Code!', pillar: 'spiritual', status: 'potential', gut_check_score: null, xp_reward: 10 },
 ];
 
 const DEFAULT_PROFILE = {
@@ -1324,15 +1727,10 @@ const DEFAULT_PROFILE = {
   xp: 0,
   streak: 0,
   hd_type: 'generator',
-  pillars_stats: {
-    physical: 0,
-    mental: 0,
-    intellectual: 0,
-    spiritual: 0,
-    cultural: 0,
-    professional: 0,
-    personal: 0
-  }
+  archetype: 'hero',
+  zodiac: null,
+  social_links: {},
+  pillars_stats: { physical: 0, mental: 0, intellectual: 0, spiritual: 0, cultural: 0, professional: 0, personal: 0 }
 };
 
 export default function App() {
@@ -1343,10 +1741,11 @@ export default function App() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [protocols, setProtocols] = useState([]);
+  const [sprints, setSprints] = useState([]);
+  const [journals, setJournals] = useState([]);
   
   const supabase = createClient();
   
-  // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -1361,69 +1760,53 @@ export default function App() {
         setLoading(false);
       }
     };
-    
     checkAuth();
     
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          await loadUserData(session.user);
-        } else {
-          setUser(null);
-          setUserProfile(null);
-          setTasks([]);
-          setProtocols([]);
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        await loadUserData(session.user);
+      } else {
+        setUser(null);
+        setUserProfile(null);
+        setTasks([]);
+        setProtocols([]);
       }
-    );
-    
+    });
     return () => subscription.unsubscribe();
   }, []);
   
-  // Load user data from localStorage (or Supabase if tables exist)
   const loadUserData = async (authUser) => {
-    const storageKey = `siddha_${authUser.id}`;
-    
-    // Try to load from localStorage first
+    const storageKey = `siddha_v2_${authUser.id}`;
     const savedData = localStorage.getItem(storageKey);
     if (savedData) {
       const data = JSON.parse(savedData);
       setUserProfile(data.profile);
       setTasks(data.tasks || []);
       setProtocols(data.protocols || []);
+      setSprints(data.sprints || []);
+      setJournals(data.journals || []);
     } else {
-      // Initialize with defaults
-      const newProfile = {
-        ...DEFAULT_PROFILE,
-        username: authUser.email?.split('@')[0] || 'Warrior'
-      };
+      const newProfile = { ...DEFAULT_PROFILE, username: authUser.email?.split('@')[0] || 'Warrior' };
       setUserProfile(newProfile);
       setTasks(DEFAULT_TASKS);
       setProtocols(DEFAULT_PROTOCOLS);
-      
-      // Save to localStorage
-      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS);
+      setSprints([]);
+      setJournals([]);
+      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS, [], []);
     }
   };
   
-  // Save user data to localStorage
-  const saveUserData = useCallback((userId, profile, taskList, protocolList) => {
-    const storageKey = `siddha_${userId}`;
-    localStorage.setItem(storageKey, JSON.stringify({
-      profile,
-      tasks: taskList,
-      protocols: protocolList
-    }));
+  const saveUserData = useCallback((userId, profile, taskList, protocolList, sprintList, journalList) => {
+    const storageKey = `siddha_v2_${userId}`;
+    localStorage.setItem(storageKey, JSON.stringify({ profile, tasks: taskList, protocols: protocolList, sprints: sprintList, journals: journalList }));
   }, []);
   
-  // Save whenever data changes
   useEffect(() => {
     if (user && userProfile) {
-      saveUserData(user.id, userProfile, tasks, protocols);
+      saveUserData(user.id, userProfile, tasks, protocols, sprints, journals);
     }
-  }, [user, userProfile, tasks, protocols, saveUserData]);
+  }, [user, userProfile, tasks, protocols, sprints, journals, saveUserData]);
   
   const handleAuthSuccess = async (authUser) => {
     setUser(authUser);
@@ -1434,34 +1817,15 @@ export default function App() {
     await supabase.auth.signOut();
     setUser(null);
     setUserProfile(null);
-    setTasks([]);
-    setProtocols([]);
   };
   
   const handleToggleProtocol = (protocolId) => {
     setProtocols(prev => {
-      const updated = prev.map(p => 
-        p.id === protocolId ? { ...p, is_checked: !p.is_checked } : p
-      );
-      
-      // Award XP if completing a protocol
+      const updated = prev.map(p => p.id === protocolId ? { ...p, is_checked: !p.is_checked } : p);
       const protocol = prev.find(p => p.id === protocolId);
       if (protocol && !protocol.is_checked) {
-        setUserProfile(profile => ({
-          ...profile,
-          xp: (profile?.xp || 0) + XP_REWARDS.protocol_complete
-        }));
-        
-        // Check if all completed
-        const allCompleted = updated.every(p => p.is_checked);
-        if (allCompleted) {
-          setUserProfile(profile => ({
-            ...profile,
-            xp: (profile?.xp || 0) + XP_REWARDS.all_protocols_daily
-          }));
-        }
+        setUserProfile(profile => ({ ...profile, xp: (profile?.xp || 0) + XP_REWARDS.protocol_complete }));
       }
-      
       return updated;
     });
   };
@@ -1469,29 +1833,18 @@ export default function App() {
   const handleUpdateTask = (updatedTask) => {
     setTasks(prev => {
       const oldTask = prev.find(t => t.id === updatedTask.id);
-      
-      // Award XP if completing task (moving to wisdom)
       if (updatedTask.status === 'wisdom' && oldTask?.status !== 'wisdom') {
         const xpGain = updatedTask.xp_reward || XP_REWARDS.task_complete;
-        const extraXp = updatedTask.gut_check_score >= 8 ? XP_REWARDS.high_gut_check : 0;
-        
         setUserProfile(profile => {
           const pillarStats = { ...(profile?.pillars_stats || {}) };
           pillarStats[updatedTask.pillar] = (pillarStats[updatedTask.pillar] || 0) + 1;
-          
-          return {
-            ...profile,
-            xp: (profile?.xp || 0) + xpGain + extraXp,
-            pillars_stats: pillarStats
-          };
+          return { ...profile, xp: (profile?.xp || 0) + xpGain, pillars_stats: pillarStats };
         });
       }
-      
       return prev.map(t => t.id === updatedTask.id ? updatedTask : t);
     });
   };
   
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-void flex items-center justify-center">
@@ -1505,15 +1858,12 @@ export default function App() {
     );
   }
   
-  // Auth page if not logged in
-  if (!user) {
-    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
-  }
+  if (!user) return <AuthPage onAuthSuccess={handleAuthSuccess} />;
   
   const getPageTitle = () => {
     switch (currentPage) {
       case 'dashboard': return 'Dashboard';
-      case 'sprints': return 'Sprint Kanban';
+      case 'sprints': return 'Sprints';
       case 'journal': return 'Journal';
       case 'profile': return 'Profile';
       default: return 'Siddha Code';
@@ -1522,61 +1872,20 @@ export default function App() {
   
   const renderPage = () => {
     switch (currentPage) {
-      case 'dashboard':
-        return (
-          <DashboardPage 
-            userProfile={userProfile} 
-            protocols={protocols} 
-            onToggleProtocol={handleToggleProtocol} 
-          />
-        );
-      case 'sprints':
-        return (
-          <SprintsPage 
-            tasks={tasks} 
-            setTasks={setTasks} 
-            userProfile={userProfile}
-            onUpdateTask={handleUpdateTask}
-          />
-        );
-      case 'journal':
-        return <JournalPage />;
-      case 'profile':
-        return <ProfilePage user={user} userProfile={userProfile} />;
-      default:
-        return (
-          <DashboardPage 
-            userProfile={userProfile} 
-            protocols={protocols} 
-            onToggleProtocol={handleToggleProtocol} 
-          />
-        );
+      case 'dashboard': return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} />;
+      case 'sprints': return <SprintsPage tasks={tasks} setTasks={setTasks} userProfile={userProfile} onUpdateTask={handleUpdateTask} sprints={sprints} />;
+      case 'journal': return <JournalPage journals={journals} setJournals={setJournals} userProfile={userProfile} />;
+      case 'profile': return <ProfilePage user={user} userProfile={userProfile} setUserProfile={setUserProfile} />;
+      default: return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} />;
     }
   };
   
   return (
     <div className="min-h-screen bg-void">
-      <Sidebar 
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        isMobileOpen={isMobileOpen}
-        setIsMobileOpen={setIsMobileOpen}
-        user={user}
-        userProfile={userProfile}
-      />
-      
+      <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} user={user} userProfile={userProfile} />
       <div className="lg:ml-64">
-        <Header 
-          title={getPageTitle()} 
-          setIsMobileOpen={setIsMobileOpen}
-          user={user}
-          userProfile={userProfile}
-          onSignOut={handleSignOut}
-        />
-        
-        <main className="p-4 lg:p-8">
-          {renderPage()}
-        </main>
+        <Header title={getPageTitle()} setIsMobileOpen={setIsMobileOpen} user={user} userProfile={userProfile} onSignOut={handleSignOut} onNavigate={setCurrentPage} />
+        <main className="p-4 lg:p-8">{renderPage()}</main>
       </div>
     </div>
   );
