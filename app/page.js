@@ -372,6 +372,22 @@ const AuthPage = ({ onAuthSuccess }) => {
             </svg>
             Google
           </Button>
+          
+          {/* Demo Mode */}
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => onAuthSuccess({ id: 'demo-user', email: 'demo@siddhacode.com' })}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Try Demo Mode
+            </Button>
+            <p className="text-xs text-white/30 text-center mt-2">
+              No sign up required - explore all features
+            </p>
+          </div>
         </GlassCard>
         
         {/* Footer */}
