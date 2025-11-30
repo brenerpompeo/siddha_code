@@ -65,8 +65,6 @@ const NAV_ITEMS = [
 
 // ============ UI COMPONENTS ============
 
-import { forwardRef } from 'react';
-
 const GlassCard = forwardRef(({ children, className, ...props }, ref) => (
   <div 
     ref={ref}
