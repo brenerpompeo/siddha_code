@@ -52,6 +52,7 @@ import { PILLARS, getPillarByKey, getPillarColor } from '@/lib/constants/pillars
 import { RANKS, getRankByXp, getNextRank, getRankProgress } from '@/lib/constants/ranks';
 import { KANBAN_COLUMNS, GUT_CHECK_PROMPTS, XP_REWARDS, getColumnById } from '@/lib/constants/kanban';
 import { ARCHETYPES, HD_TYPES, ZODIAC_SIGNS, getArchetypeByKey, getHDTypeByKey } from '@/lib/constants/archetypes';
+import { SUB_PILLARS, getSubPillarByKey } from '@/lib/constants/sub-pillars';
 import { createClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import {
