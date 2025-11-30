@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +22,7 @@ export async function POST(request) {
       );
     }
 
-    const genAI = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
     
     // Build system context based on type
     let systemPrompt = '';
@@ -69,13 +69,10 @@ export async function POST(request) {
 
     const fullPrompt = `${systemPrompt}\n\nUsuário: ${prompt}`;
 
-    const model = genAI.models.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
-    });
-
-    const response = result.response;
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
     const generatedText = response.text();
 
     return NextResponse.json({
@@ -94,7 +91,7 @@ export async function POST(request) {
     }
     
     return NextResponse.json(
-      { error: 'Failed to generate AI response' },
+      { error: 'Failed to generate AI response', details: error.message },
       { status: 500 }
     );
   }
