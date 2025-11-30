@@ -249,7 +249,7 @@ const UserDropdown = ({ user, userProfile, onSignOut, onNavigate }) => {
             onClick={() => setIsOpen(false)} 
           />
           <div className="absolute right-0 top-full mt-2 w-64 z-50">
-            <GlassCard className="p-2">
+            <div className="bg-surface border border-white/10 rounded-xl p-2 shadow-xl shadow-black/50">
               {/* User Info */}
               <div className="p-3 border-b border-white/10 mb-2">
                 <div className="flex items-center gap-3">
