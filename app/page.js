@@ -1379,8 +1379,9 @@ const CreateTaskModal = ({ isOpen, onClose, onCreateTask }) => {
 const JournalPage = ({ journals, setJournals, userProfile }) => {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [newEntry, setNewEntry] = useState({ title: '', content: '', tags: [] });
+  const [newEntry, setNewEntry] = useState({ title: '', content: '', tags: [], pillar: 'mental' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [tagInput, setTagInput] = useState('');
   
   const filteredJournals = journals.filter(j => 
     j.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1396,9 +1397,58 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
       linked_entries: []
     };
     setJournals(prev => [entry, ...prev]);
-    setNewEntry({ title: '', content: '', tags: [] });
+    setNewEntry({ title: '', content: '', tags: [], pillar: 'mental' });
+    setTagInput('');
     setIsCreating(false);
   };
+  
+  const handleDeleteEntry = (entryId) => {
+    if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+      setJournals(prev => prev.filter(j => j.id !== entryId));
+      setSelectedEntry(null);
+    }
+  };
+  
+  const handleTagInput = (e) => {
+    const value = e.target.value;
+    // Check if user typed # followed by text and space or enter
+    if (value.endsWith(' ') && value.includes('#')) {
+      const tags = value.match(/#(\w+)/g)?.map(t => t.slice(1)) || [];
+      if (tags.length > 0) {
+        setNewEntry(prev => ({ 
+          ...prev, 
+          tags: [...new Set([...(prev.tags || []), ...tags])] 
+        }));
+        setTagInput('');
+        return;
+      }
+    }
+    setTagInput(value);
+  };
+  
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter' && tagInput.includes('#')) {
+      e.preventDefault();
+      const tags = tagInput.match(/#(\w+)/g)?.map(t => t.slice(1)) || [];
+      if (tags.length > 0) {
+        setNewEntry(prev => ({ 
+          ...prev, 
+          tags: [...new Set([...(prev.tags || []), ...tags])] 
+        }));
+        setTagInput('');
+      }
+    }
+  };
+  
+  const removeTag = (tagToRemove) => {
+    setNewEntry(prev => ({
+      ...prev,
+      tags: prev.tags.filter(t => t !== tagToRemove)
+    }));
+  };
+  
+  // Get sub-pillars for selected pillar
+  const subPillarsForPillar = SUB_PILLARS[newEntry.pillar] || [];
   
   return (
     <div className="space-y-6">
@@ -1427,28 +1477,46 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
       
       {/* Journal Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredJournals.map(entry => (
-          <GlassCard
-            key={entry.id}
-            className="p-4 cursor-pointer hover:border-white/20 transition-all"
-            onClick={() => setSelectedEntry(entry)}
-          >
-            <h3 className="font-semibold text-white mb-2 line-clamp-1">{entry.title}</h3>
-            <p className="text-sm text-white/60 line-clamp-3 mb-3">{entry.content}</p>
-            <div className="flex items-center justify-between">
-              <div className="flex gap-1">
-                {entry.tags?.slice(0, 2).map(tag => (
-                  <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
-                    #{tag}
-                  </span>
-                ))}
+        {filteredJournals.map(entry => {
+          const pillar = getPillarByKey(entry.pillar);
+          return (
+            <GlassCard
+              key={entry.id}
+              className="p-4 cursor-pointer hover:border-white/20 transition-all"
+              onClick={() => setSelectedEntry(entry)}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                {pillar && (
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pillar.color }} />
+                )}
+                <h3 className="font-semibold text-white line-clamp-1 flex-1">{entry.title}</h3>
               </div>
-              <span className="text-xs text-white/40">
-                {new Date(entry.created_at).toLocaleDateString('pt-BR')}
-              </span>
-            </div>
-          </GlassCard>
-        ))}
+              <p className="text-sm text-white/60 line-clamp-3 mb-3">{entry.content}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1 flex-wrap">
+                  {entry.tags?.slice(0, 3).map(tag => {
+                    const subPillar = getSubPillarByKey(tag);
+                    return (
+                      <span 
+                        key={tag} 
+                        className="text-xs px-2 py-0.5 rounded-full"
+                        style={subPillar ? { 
+                          backgroundColor: `${getPillarColor(subPillar.pillar)}20`,
+                          color: getPillarColor(subPillar.pillar)
+                        } : { backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
+                      >
+                        #{subPillar?.label || tag}
+                      </span>
+                    );
+                  })}
+                </div>
+                <span className="text-xs text-white/40">
+                  {new Date(entry.created_at).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+            </GlassCard>
+          );
+        })}
         
         {filteredJournals.length === 0 && (
           <div className="col-span-full">
@@ -1464,8 +1532,8 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
       
       {/* Create Entry Modal */}
       {isCreating && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <GlassCard className="w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface border border-white/10 rounded-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-white">Nova Entrada</h3>
               <button onClick={() => setIsCreating(false)} className="p-2 hover:bg-white/10 rounded-lg">
@@ -1481,6 +1549,30 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
                 onChange={(e) => setNewEntry(prev => ({ ...prev, title: e.target.value }))}
               />
               
+              {/* Pillar Selection */}
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Pilar Principal</label>
+                <div className="flex flex-wrap gap-2">
+                  {PILLARS.map(p => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setNewEntry(prev => ({ ...prev, pillar: p.key }))}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full text-xs transition-all',
+                        newEntry.pillar === p.key ? '' : 'bg-white/5 text-white/60'
+                      )}
+                      style={newEntry.pillar === p.key ? {
+                        backgroundColor: `${p.color}30`,
+                        color: p.color
+                      } : {}}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
               <div>
                 <label className="block text-sm text-white/70 mb-2">Conteúdo</label>
                 <textarea
@@ -1491,14 +1583,67 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
                 />
               </div>
               
+              {/* Tags with # */}
               <div>
-                <label className="block text-sm text-white/70 mb-2">Tags (separadas por vírgula)</label>
+                <label className="block text-sm text-white/70 mb-2">Tags (use # para adicionar)</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {newEntry.tags?.map(tag => {
+                    const subPillar = getSubPillarByKey(tag);
+                    return (
+                      <span 
+                        key={tag} 
+                        className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full"
+                        style={subPillar ? { 
+                          backgroundColor: `${getPillarColor(subPillar.pillar)}20`,
+                          color: getPillarColor(subPillar.pillar)
+                        } : { backgroundColor: 'rgba(139,92,246,0.2)', color: '#8b5cf6' }}
+                      >
+                        #{subPillar?.label || tag}
+                        <button 
+                          onClick={() => removeTag(tag)}
+                          className="hover:opacity-70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
                 <input
-                  placeholder="reflexão, human design, sprint"
-                  value={newEntry.tags?.join(', ')}
-                  onChange={(e) => setNewEntry(prev => ({ ...prev, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) }))}
+                  placeholder="#meditacao #leitura #cardio"
+                  value={tagInput}
+                  onChange={handleTagInput}
+                  onKeyDown={handleTagKeyDown}
                   className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
                 />
+                <p className="text-xs text-white/40 mt-1">Pressione espaço ou Enter após cada #tag</p>
+              </div>
+              
+              {/* Quick Sub-Pillar Tags */}
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Sub-pilares sugeridos ({getPillarByKey(newEntry.pillar)?.label})</label>
+                <div className="flex flex-wrap gap-2">
+                  {subPillarsForPillar.slice(0, 6).map(sp => (
+                    <button
+                      key={sp.key}
+                      type="button"
+                      onClick={() => {
+                        if (!newEntry.tags?.includes(sp.key)) {
+                          setNewEntry(prev => ({ ...prev, tags: [...(prev.tags || []), sp.key] }));
+                        }
+                      }}
+                      disabled={newEntry.tags?.includes(sp.key)}
+                      className={cn(
+                        'px-2 py-1 rounded-full text-xs transition-all',
+                        newEntry.tags?.includes(sp.key) 
+                          ? 'bg-primary/20 text-primary opacity-50' 
+                          : 'bg-white/5 text-white/60 hover:bg-white/10'
+                      )}
+                    >
+                      {sp.icon} {sp.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               
               <div className="flex gap-3 pt-4">
@@ -1506,16 +1651,24 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
                 <Button className="flex-1" onClick={handleCreateEntry}>Salvar Entrada</Button>
               </div>
             </div>
-          </GlassCard>
+          </div>
         </div>
       )}
       
       {/* View Entry Modal */}
       {selectedEntry && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <GlassCard className="w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface border border-white/10 rounded-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">{selectedEntry.title}</h2>
+              <div className="flex items-center gap-3">
+                {getPillarByKey(selectedEntry.pillar) && (
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: getPillarByKey(selectedEntry.pillar)?.color }} 
+                  />
+                )}
+                <h2 className="text-xl font-bold text-white">{selectedEntry.title}</h2>
+              </div>
               <button onClick={() => setSelectedEntry(null)} className="p-2 hover:bg-white/10 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
@@ -1526,12 +1679,22 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
             </div>
             
             {selectedEntry.tags?.length > 0 && (
-              <div className="flex gap-2 mt-6 pt-4 border-t border-white/10">
-                {selectedEntry.tags.map(tag => (
-                  <span key={tag} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">
-                    #{tag}
-                  </span>
-                ))}
+              <div className="flex gap-2 flex-wrap mt-6 pt-4 border-t border-white/10">
+                {selectedEntry.tags.map(tag => {
+                  const subPillar = getSubPillarByKey(tag);
+                  return (
+                    <span 
+                      key={tag} 
+                      className="text-xs px-2 py-1 rounded-full"
+                      style={subPillar ? { 
+                        backgroundColor: `${getPillarColor(subPillar.pillar)}20`,
+                        color: getPillarColor(subPillar.pillar)
+                      } : { backgroundColor: 'rgba(139,92,246,0.2)', color: '#8b5cf6' }}
+                    >
+                      #{subPillar?.label || tag}
+                    </span>
+                  );
+                })}
               </div>
             )}
             
@@ -1541,10 +1704,12 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
               </span>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm"><Edit3 className="w-4 h-4 mr-1" /> Editar</Button>
-                <Button variant="danger" size="sm"><Trash2 className="w-4 h-4 mr-1" /> Excluir</Button>
+                <Button variant="danger" size="sm" onClick={() => handleDeleteEntry(selectedEntry.id)}>
+                  <Trash2 className="w-4 h-4 mr-1" /> Excluir
+                </Button>
               </div>
             </div>
-          </GlassCard>
+          </div>
         </div>
       )}
     </div>
