@@ -1388,6 +1388,129 @@ const CreateTaskModal = ({ isOpen, onClose, onCreateTask }) => {
   );
 };
 
+// Create Sprint Modal
+const CreateSprintModal = ({ isOpen, onClose, onCreateSprint }) => {
+  const [title, setTitle] = useState('');
+  const [archetype, setArchetype] = useState('hero');
+  const [duration, setDuration] = useState(7);
+  const [goals, setGoals] = useState('');
+  
+  if (!isOpen) return null;
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    
+    onCreateSprint({
+      title: title.trim(),
+      archetype,
+      duration,
+      goals: goals.split('\n').filter(Boolean),
+      tasks_count: 0
+    });
+    
+    setTitle('');
+    setArchetype('hero');
+    setDuration(7);
+    setGoals('');
+    onClose();
+  };
+  
+  const selectedArchetype = getArchetypeByKey(archetype);
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-surface border border-white/10 rounded-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-white">Novo Sprint</h3>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Nome do Sprint"
+            placeholder="Ex: Semana do Foco Total"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            autoFocus
+          />
+          
+          {/* Duration */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Duração (dias)</label>
+            <div className="flex gap-2">
+              {[7, 14, 21, 30].map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDuration(d)}
+                  className={cn(
+                    'flex-1 py-2 rounded-lg text-sm transition-all',
+                    duration === d 
+                      ? 'bg-primary text-white' 
+                      : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  )}
+                >
+                  {d} dias
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Archetype Selection */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Arquétipo do Sprint</label>
+            <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto">
+              {ARCHETYPES.map(arch => (
+                <button
+                  key={arch.key}
+                  type="button"
+                  onClick={() => setArchetype(arch.key)}
+                  className={cn(
+                    'p-3 rounded-lg text-center transition-all',
+                    archetype === arch.key 
+                      ? 'bg-primary/20 border-2 border-primary' 
+                      : 'bg-white/5 border border-white/10 hover:border-white/20'
+                  )}
+                >
+                  <span className="text-2xl block mb-1">{arch.icon}</span>
+                  <span className="text-xs text-white/80">{arch.name}</span>
+                </button>
+              ))}
+            </div>
+            
+            {selectedArchetype && (
+              <div className="mt-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                <p className="text-sm text-primary font-medium">{selectedArchetype.name}</p>
+                <p className="text-xs text-white/60 italic">"{selectedArchetype.motto}"</p>
+                <p className="text-xs text-white/50 mt-1">{selectedArchetype.description}</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Goals */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Objetivos (um por linha)</label>
+            <textarea
+              placeholder="Completar 10 tarefas&#10;Atingir 500 XP&#10;Manter streak de 7 dias"
+              value={goals}
+              onChange={(e) => setGoals(e.target.value)}
+              className="w-full h-24 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary resize-none"
+            />
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" className="flex-1">Criar Sprint</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // ============ JOURNAL PAGE ============
 
 const JournalPage = ({ journals, setJournals, userProfile }) => {
