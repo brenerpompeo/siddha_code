@@ -69,7 +69,7 @@ export async function POST(request) {
 
     const fullPrompt = `${systemPrompt}\n\nUsuário: ${prompt}`;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     
     const result = await model.generateContent(fullPrompt);
     const response = await result.response;
