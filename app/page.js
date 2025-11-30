@@ -307,7 +307,7 @@ const UserDropdown = ({ user, userProfile, onSignOut, onNavigate }) => {
                   Sair
                 </button>
               </div>
-            </GlassCard>
+            </div>
           </div>
         </>
       )}
