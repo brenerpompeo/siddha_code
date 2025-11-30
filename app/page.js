@@ -439,7 +439,7 @@ const Sidebar = ({ currentPage, setCurrentPage, isMobileOpen, setIsMobileOpen, u
                 'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
                 currentPage === item.id
                   ? 'bg-primary/20 text-primary border border-primary/30'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                  : 'text-white/50 hover:text-white hover:bg-white/5'
               )}
             >
               <item.icon className="w-5 h-5" />
