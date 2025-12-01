@@ -1734,6 +1734,42 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
     }
   };
   
+  // Edit Sprint
+  const handleEditSprint = (sprint) => {
+    setSprintToEdit(sprint);
+    setIsEditSprintModalOpen(true);
+  };
+  
+  // Update Sprint
+  const handleUpdateSprint = (updatedSprint) => {
+    setSprints(prev => prev.map(s => 
+      s.id === updatedSprint.id ? { ...s, ...updatedSprint } : s
+    ));
+    if (selectedSprint?.id === updatedSprint.id) {
+      setSelectedSprint(prev => prev ? { ...prev, ...updatedSprint } : null);
+    }
+    setIsEditSprintModalOpen(false);
+    setSprintToEdit(null);
+  };
+  
+  // Delete Sprint
+  const handleDeleteSprint = (sprintId) => {
+    // Remove sprint
+    setSprints(prev => prev.filter(s => s.id !== sprintId));
+    
+    // Unlink tasks from this sprint (don't delete them)
+    setTasks(prev => prev.map(t => 
+      t.sprintId === sprintId ? { ...t, sprintId: null } : t
+    ));
+    
+    // Clear selection if deleted sprint was selected
+    if (selectedSprint?.id === sprintId) {
+      const remainingSprints = sprints.filter(s => s.id !== sprintId);
+      const nextActive = remainingSprints.find(s => s.status === 'active');
+      setSelectedSprint(nextActive || null);
+    }
+  };
+  
   return (
     <div className="space-y-6">
       {/* Page Header */}
