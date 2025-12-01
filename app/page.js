@@ -1241,10 +1241,11 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
         onCreateTask={(task) => setTasks(prev => [...prev, { ...task, id: uuidv4(), status: 'potential', gut_check_score: null }])}
       />
       
-      <CreateSprintModal
+      <SprintBuilder
         isOpen={isCreateSprintModalOpen}
         onClose={() => setIsCreateSprintModalOpen(false)}
         onCreateSprint={(sprint) => setSprints(prev => [...prev, { ...sprint, id: uuidv4(), status: 'active', created_at: new Date().toISOString() }])}
+        userProfile={userProfile}
       />
     </div>
   );
