@@ -2375,7 +2375,17 @@ export default function App() {
     <div className="min-h-screen bg-void">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} user={user} userProfile={userProfile} />
       <div className="lg:ml-64">
-        <Header title={getPageTitle()} setIsMobileOpen={setIsMobileOpen} user={user} userProfile={userProfile} onSignOut={handleSignOut} onNavigate={setCurrentPage} />
+        <Header 
+          title={getPageTitle()} 
+          setIsMobileOpen={setIsMobileOpen} 
+          user={user} 
+          userProfile={userProfile} 
+          onSignOut={handleSignOut} 
+          onNavigate={setCurrentPage}
+          todayMood={todayMood}
+          onSelectMood={handleSelectMood}
+          moodHistory={moodHistory}
+        />
         <main className="p-4 lg:p-8">{renderPage()}</main>
       </div>
     </div>
