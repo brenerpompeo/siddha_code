@@ -1042,8 +1042,9 @@ const AuthPage = ({ onAuthSuccess }) => {
 
 // ============ DASHBOARD PAGE ============
 
-const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprints }) => {
+const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprints, setSprints }) => {
   const [protocolTab, setProtocolTab] = useState('daily');
+  const [isSprintBuilderOpen, setIsSprintBuilderOpen] = useState(false);
   const displayName = userProfile?.username || 'Warrior';
   const today = new Date().toLocaleDateString('pt-BR', { 
     weekday: 'long', 
@@ -1056,6 +1057,15 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
   const completedTasks = tasks.filter(t => t.status === 'wisdom').length;
   const activeTasks = tasks.filter(t => t.status !== 'wisdom').length;
   const activeSprints = sprints.filter(s => s.status === 'active').length;
+  
+  const handleCreateSprint = (sprint) => {
+    setSprints(prev => [...prev, { 
+      ...sprint, 
+      id: uuidv4(), 
+      status: 'active', 
+      created_at: new Date().toISOString() 
+    }]);
+  };
   
   return (
     <div className="space-y-6">
@@ -1070,7 +1080,7 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
             <Calendar className="w-4 h-4 mr-2" />
             Ver Calendário
           </Button>
-          <Button>
+          <Button onClick={() => setIsSprintBuilderOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Novo Sprint
           </Button>
