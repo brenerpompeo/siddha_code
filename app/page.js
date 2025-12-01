@@ -1825,6 +1825,9 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
         <SprintDetailPanel 
           sprint={selectedSprint}
           onUpdateStatus={handleUpdateSprintStatus}
+          onEdit={handleEditSprint}
+          onDelete={handleDeleteSprint}
+          tasksCount={selectedSprintTasksCount}
         />
       )}
       
