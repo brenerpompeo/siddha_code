@@ -1908,65 +1908,6 @@ const KanbanView = ({ tasks, setTasks, onUpdateTask, userProfile }) => {
   );
 };
 
-// Timeline View
-const TimelineView = ({ tasks, sprints }) => (
-  <GlassCard className="p-6">
-    <div className="space-y-4">
-      {tasks.length === 0 ? (
-        <p className="text-center text-white/40 py-8">Nenhuma tarefa para exibir na timeline</p>
-      ) : (
-        tasks.map((task, idx) => {
-          const pillar = getPillarByKey(task.pillar);
-          return (
-            <div key={task.id} className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pillar?.color || '#6b7280' }} />
-                {idx < tasks.length - 1 && <div className="w-0.5 flex-1 bg-white/10 my-1" />}
-              </div>
-              <div className="flex-1 pb-4">
-                <p className="text-sm font-medium text-white">{task.title}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge color={pillar?.color || '#6b7280'}>{pillar?.label || task.pillar}</Badge>
-                  <span className="text-xs text-white/40">{getColumnById(task.status)?.label}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })
-      )}
-    </div>
-  </GlassCard>
-);
-
-// List View
-const ListView = ({ tasks, onUpdateTask }) => (
-  <GlassCard className="divide-y divide-white/5">
-    {tasks.length === 0 ? (
-      <p className="text-center text-white/40 py-8">Nenhuma tarefa</p>
-    ) : (
-      tasks.map(task => {
-        const pillar = getPillarByKey(task.pillar);
-        const column = getColumnById(task.status);
-        return (
-          <div key={task.id} className="p-4 flex items-center gap-4 hover:bg-white/[0.02]">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: column?.color }} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{task.title}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge color={pillar?.color || '#6b7280'}>{pillar?.label}</Badge>
-                {task.gut_check_score && <span className="text-xs text-white/40">Gut: {task.gut_check_score}/10</span>}
-              </div>
-            </div>
-            <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${column?.color}20`, color: column?.color }}>
-              {column?.label}
-            </span>
-          </div>
-        );
-      })
-    )}
-  </GlassCard>
-);
-
 // DnD Components (simplified)
 const SortableTaskCard = ({ task }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
