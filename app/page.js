@@ -1662,6 +1662,8 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
   const [viewMode, setViewMode] = useState('kanban');
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
+  const [isEditSprintModalOpen, setIsEditSprintModalOpen] = useState(false);
+  const [sprintToEdit, setSprintToEdit] = useState(null);
   const [selectedPillar, setSelectedPillar] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState(null);
   const [masterStatus, setMasterStatus] = useState('active');
@@ -1696,6 +1698,12 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
     }
     return filtered;
   }, [tasks, selectedSprint, selectedPillar]);
+  
+  // Count tasks for selected sprint
+  const selectedSprintTasksCount = useMemo(() => {
+    if (!selectedSprint) return 0;
+    return tasks.filter(t => t.sprintId === selectedSprint.id).length;
+  }, [tasks, selectedSprint]);
   
   const handleUpdateSprintStatus = (sprintId, newStatus) => {
     setSprints(prev => prev.map(s => 
