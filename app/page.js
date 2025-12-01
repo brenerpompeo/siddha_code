@@ -1148,7 +1148,11 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
             activeTab={protocolTab}
             setActiveTab={setProtocolTab}
           />
-          <SprintsOverviewWidget sprints={sprints} onViewSprint={() => {}} />
+          <SprintsOverviewWidget 
+            sprints={sprints} 
+            onViewSprint={() => {}} 
+            onNewSprint={() => setIsSprintBuilderOpen(true)}
+          />
         </div>
         
         {/* Right Column */}
@@ -1157,6 +1161,14 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
           <AIAssistantWidget userProfile={userProfile} />
         </div>
       </div>
+      
+      {/* Sprint Builder Modal */}
+      <SprintBuilder
+        isOpen={isSprintBuilderOpen}
+        onClose={() => setIsSprintBuilderOpen(false)}
+        onCreateSprint={handleCreateSprint}
+        userProfile={userProfile}
+      />
     </div>
   );
 };
