@@ -777,7 +777,7 @@ const ProtocolsWidget = ({ protocols, onToggle, activeTab, setActiveTab }) => {
 
 // ============ SPRINTS OVERVIEW ============
 
-const SprintsOverviewWidget = ({ sprints, onViewSprint }) => {
+const SprintsOverviewWidget = ({ sprints, onViewSprint, onNewSprint }) => {
   const activeSprints = sprints.filter(s => s.status === 'active');
   const completedSprints = sprints.filter(s => s.status === 'completed');
   
@@ -822,7 +822,7 @@ const SprintsOverviewWidget = ({ sprints, onViewSprint }) => {
         )}
       </div>
       
-      <Button variant="secondary" className="w-full mt-4" size="sm">
+      <Button variant="secondary" className="w-full mt-4" size="sm" onClick={onNewSprint}>
         <Plus className="w-4 h-4 mr-2" />
         Novo Sprint
       </Button>
