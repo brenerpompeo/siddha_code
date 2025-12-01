@@ -321,9 +321,155 @@ const UserDropdown = ({ user, userProfile, onSignOut, onNavigate }) => {
   );
 };
 
+// ============ MOOD TRACKER ============
+
+const MOODS = [
+  { id: 'amazing', label: 'Incrível', icon: SmilePlus, color: '#22c55e', score: 5 },
+  { id: 'good', label: 'Bem', icon: Smile, color: '#84cc16', score: 4 },
+  { id: 'neutral', label: 'Neutro', icon: Meh, color: '#eab308', score: 3 },
+  { id: 'bad', label: 'Mal', icon: Frown, color: '#f97316', score: 2 },
+  { id: 'terrible', label: 'Péssimo', icon: Angry, color: '#ef4444', score: 1 },
+];
+
+const getMoodById = (id) => MOODS.find(m => m.id === id);
+
+const MoodTracker = ({ todayMood, onSelectMood, moodHistory = [] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const currentMood = todayMood ? getMoodById(todayMood) : null;
+  
+  // Calculate weekly average
+  const last7Days = moodHistory.slice(-7);
+  const weeklyAvg = last7Days.length > 0 
+    ? (last7Days.reduce((acc, m) => acc + (getMoodById(m.mood)?.score || 3), 0) / last7Days.length).toFixed(1)
+    : null;
+  
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          'flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all',
+          currentMood ? 'bg-white/10' : 'bg-white/5 hover:bg-white/10'
+        )}
+        style={currentMood ? { backgroundColor: `${currentMood.color}20` } : {}}
+      >
+        {currentMood ? (
+          <>
+            <currentMood.icon className="w-4 h-4" style={{ color: currentMood.color }} />
+            <span className="text-sm font-medium hidden sm:block" style={{ color: currentMood.color }}>
+              {currentMood.label}
+            </span>
+          </>
+        ) : (
+          <>
+            <Smile className="w-4 h-4 text-white/50" />
+            <span className="text-sm font-medium text-white/50 hidden sm:block">Mood</span>
+          </>
+        )}
+        <ChevronDown className={cn(
+          'w-3 h-3 text-white/50 transition-transform hidden sm:block',
+          isOpen && 'rotate-180'
+        )} />
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 w-72 z-50">
+            <div className="bg-surface border border-white/10 rounded-xl p-4 shadow-xl shadow-black/50">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-white">Como você está hoje?</h4>
+                {weeklyAvg && (
+                  <span className="text-xs text-white/50">
+                    Média: {weeklyAvg}/5
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex justify-between gap-2 mb-4">
+                {MOODS.map(mood => {
+                  const isSelected = todayMood === mood.id;
+                  return (
+                    <button
+                      key={mood.id}
+                      onClick={() => {
+                        onSelectMood(mood.id);
+                        setIsOpen(false);
+                      }}
+                      className={cn(
+                        'flex-1 flex flex-col items-center gap-1 p-2 rounded-lg transition-all',
+                        isSelected ? 'ring-2' : 'hover:bg-white/5'
+                      )}
+                      style={isSelected ? { 
+                        backgroundColor: `${mood.color}20`, 
+                        ringColor: mood.color 
+                      } : {}}
+                      title={mood.label}
+                    >
+                      <mood.icon 
+                        className={cn('w-6 h-6', isSelected ? '' : 'text-white/40')}
+                        style={isSelected ? { color: mood.color } : {}}
+                      />
+                      <span 
+                        className={cn('text-[10px]', isSelected ? '' : 'text-white/40')}
+                        style={isSelected ? { color: mood.color } : {}}
+                      >
+                        {mood.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Weekly Overview */}
+              {moodHistory.length > 0 && (
+                <div className="border-t border-white/10 pt-3">
+                  <p className="text-xs text-white/50 mb-2">Últimos 7 dias</p>
+                  <div className="flex justify-between gap-1">
+                    {Array.from({ length: 7 }).map((_, i) => {
+                      const dayOffset = 6 - i;
+                      const date = new Date();
+                      date.setDate(date.getDate() - dayOffset);
+                      const dateStr = date.toISOString().split('T')[0];
+                      const dayMood = moodHistory.find(m => m.date === dateStr);
+                      const moodData = dayMood ? getMoodById(dayMood.mood) : null;
+                      const dayNames = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+                      
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                          <span className="text-[10px] text-white/30">
+                            {dayNames[date.getDay()]}
+                          </span>
+                          <div 
+                            className={cn(
+                              'w-6 h-6 rounded-full flex items-center justify-center',
+                              moodData ? '' : 'bg-white/5'
+                            )}
+                            style={moodData ? { backgroundColor: `${moodData.color}30` } : {}}
+                          >
+                            {moodData ? (
+                              <moodData.icon className="w-3.5 h-3.5" style={{ color: moodData.color }} />
+                            ) : (
+                              <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 // ============ NEW HEADER ============
 
-const Header = ({ title, setIsMobileOpen, user, userProfile, onSignOut, onNavigate }) => {
+const Header = ({ title, setIsMobileOpen, user, userProfile, onSignOut, onNavigate, todayMood, onSelectMood, moodHistory }) => {
   return (
     <header className="h-16 border-b border-white/10 bg-surface/80 backdrop-blur-xl sticky top-0 z-30">
       <div className="h-full px-4 lg:px-8 flex items-center justify-between">
@@ -340,6 +486,13 @@ const Header = ({ title, setIsMobileOpen, user, userProfile, onSignOut, onNaviga
         {/* Quick Stats */}
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-6">
+            {/* Mood Tracker */}
+            <MoodTracker 
+              todayMood={todayMood}
+              onSelectMood={onSelectMood}
+              moodHistory={moodHistory}
+            />
+            
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5">
               <Zap className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium">{(userProfile?.xp || 0).toLocaleString()} XP</span>
