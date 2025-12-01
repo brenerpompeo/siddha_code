@@ -45,7 +45,12 @@ import {
   BarChart3,
   TrendingUp,
   Award,
-  Star
+  Star,
+  Smile,
+  Meh,
+  Frown,
+  SmilePlus,
+  Angry
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { PILLARS, getPillarByKey, getPillarColor } from '@/lib/constants/pillars';
