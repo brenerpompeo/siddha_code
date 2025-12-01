@@ -1519,7 +1519,9 @@ const RoadmapView = ({ tasks, selectedSprint }) => {
 };
 
 // Sprint Detail Panel
-const SprintDetailPanel = ({ sprint, onClose, onUpdateStatus }) => {
+const SprintDetailPanel = ({ sprint, onClose, onUpdateStatus, onEdit, onDelete, tasksCount }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
   if (!sprint) return null;
   
   const archetype = getArchetypeByKey(sprint.archetype);
@@ -1546,8 +1548,9 @@ const SprintDetailPanel = ({ sprint, onClose, onUpdateStatus }) => {
           </div>
         </div>
         
-        {/* Status Actions */}
-        <div className="flex gap-2">
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {/* Status Actions */}
           {sprint.status === 'active' && (
             <>
               <Button variant="ghost" size="sm" onClick={() => onUpdateStatus(sprint.id, 'paused')}>
@@ -1572,8 +1575,39 @@ const SprintDetailPanel = ({ sprint, onClose, onUpdateStatus }) => {
               Iniciar
             </Button>
           )}
+          
+          {/* Edit & Delete */}
+          <div className="h-6 w-px bg-white/10 mx-1" />
+          <Button variant="ghost" size="sm" onClick={() => onEdit(sprint)}>
+            <Edit3 className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(true)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
       </div>
+      
+      {/* Delete Confirmation */}
+      {showDeleteConfirm && (
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg mb-4">
+          <p className="text-sm text-red-400 mb-3">
+            Tem certeza que deseja excluir este sprint? 
+            {tasksCount > 0 && ` ${tasksCount} tarefa(s) serão desvinculadas.`}
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setShowDeleteConfirm(false)}>
+              Cancelar
+            </Button>
+            <Button size="sm" className="bg-red-500 hover:bg-red-600" onClick={() => {
+              onDelete(sprint.id);
+              setShowDeleteConfirm(false);
+            }}>
+              <Trash2 className="w-4 h-4 mr-1" />
+              Excluir Sprint
+            </Button>
+          </div>
+        </div>
+      )}
       
       {/* Sprint Info */}
       {sprint.intention && (
