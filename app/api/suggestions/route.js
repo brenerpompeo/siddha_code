@@ -57,6 +57,43 @@ Responda APENAS em JSON válido com o formato: {"goals": ["meta1", "meta2", "met
 gere 5 metas específicas e alcançáveis para um sprint de ${data.duration || 7} dias.
 Metas devem ser claras, mensuráveis e desafiadoras mas realistas.`;
         break;
+      
+      case 'magic-draft':
+        systemPrompt = `Você é o Siddha AI, um assistente de desenvolvimento pessoal que combina produtividade com sabedoria ancestral.
+Analise o input do usuário e gere um rascunho completo de Sprint.
+Os 7 pilares disponíveis são: physical (Físico), mental (Mental), intellectual (Intelectual), spiritual (Espiritual), cultural (Cultural), professional (Profissional), personal (Pessoal).
+Responda APENAS em JSON válido com este formato exato:
+{
+  "sprintName": "Nome inspirador do Sprint",
+  "intention": "Intenção transformadora de 1-2 frases",
+  "suggestedPillars": ["pillar_key1", "pillar_key2"],
+  "suggestedArchetype": "archetype_key",
+  "archetypeReason": "Por que este arquétipo",
+  "tasks": [
+    {"content": "Task 1", "pillar": "pillar_key", "xp": 30},
+    {"content": "Task 2", "pillar": "pillar_key", "xp": 40}
+  ],
+  "dailyCommitments": ["Compromisso 1", "Compromisso 2", "Compromisso 3"]
+}`;
+        userPrompt = `O usuário disse: "${data.userInput}"
+
+Baseado neste input, gere um Sprint completo com:
+- Nome criativo e inspirador (2-4 palavras)
+- Intenção profunda
+- 2-3 pilares mais relevantes (use as keys: physical, mental, intellectual, spiritual, cultural, professional, personal)
+- Arquétipo mais adequado (use as keys: hero, sage, explorer, creator, caregiver, magician, ruler, lover, jester, innocent, everyman, outlaw)
+- 5-8 tasks específicas mapeadas para os pilares sugeridos
+- 3 compromissos diários práticos`;
+        break;
+        
+      case 'task-suggestions':
+        systemPrompt = `Você é um assistente de produtividade que gera tarefas específicas e acionáveis.
+Responda APENAS em JSON válido com o formato:
+{"tasks": [{"content": "descrição da task", "xp": 30}, {"content": "outra task", "xp": 40}]}`;
+        userPrompt = `Gere 5 sugestões de tasks para o pilar "${data.pillar}" (${data.pillarLabel}) relacionadas ao sub-pilar "${data.subPillar || 'geral'}".
+${data.context ? `Contexto adicional: ${data.context}` : ''}
+Cada task deve ser específica, acionável e completável em um dia. XP deve variar de 20 a 60 baseado na dificuldade.`;
+        break;
         
       default:
         return NextResponse.json({ error: 'Invalid suggestion type' }, { status: 400 });
@@ -69,7 +106,7 @@ Metas devem ser claras, mensuráveis e desafiadoras mas realistas.`;
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 1000,
     });
     
     const content = response.choices[0]?.message?.content || '{}';
