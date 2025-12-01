@@ -2203,8 +2203,29 @@ export default function App() {
   const [protocols, setProtocols] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [journals, setJournals] = useState([]);
+  const [moodHistory, setMoodHistory] = useState([]);
   
   const supabase = createClient();
+  
+  // Get today's date string
+  const today = new Date().toISOString().split('T')[0];
+  const todayMood = moodHistory.find(m => m.date === today)?.mood || null;
+  
+  // Handle mood selection
+  const handleSelectMood = (moodId) => {
+    setMoodHistory(prev => {
+      // Remove any existing entry for today
+      const filtered = prev.filter(m => m.date !== today);
+      // Add new mood entry with sprint context
+      const activeSprint = sprints.find(s => s.status === 'active');
+      return [...filtered, { 
+        date: today, 
+        mood: moodId, 
+        sprintId: activeSprint?.id || null,
+        timestamp: new Date().toISOString()
+      }];
+    });
+  };
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -2231,6 +2252,7 @@ export default function App() {
         setUserProfile(null);
         setTasks([]);
         setProtocols([]);
+        setMoodHistory([]);
       }
     });
     return () => subscription.unsubscribe();
@@ -2246,6 +2268,7 @@ export default function App() {
       setProtocols(data.protocols || []);
       setSprints(data.sprints || []);
       setJournals(data.journals || []);
+      setMoodHistory(data.moodHistory || []);
     } else {
       const newProfile = { ...DEFAULT_PROFILE, username: authUser.email?.split('@')[0] || 'Warrior' };
       setUserProfile(newProfile);
@@ -2253,20 +2276,28 @@ export default function App() {
       setProtocols(DEFAULT_PROTOCOLS);
       setSprints([]);
       setJournals([]);
-      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS, [], []);
+      setMoodHistory([]);
+      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS, [], [], []);
     }
   };
   
-  const saveUserData = useCallback((userId, profile, taskList, protocolList, sprintList, journalList) => {
+  const saveUserData = useCallback((userId, profile, taskList, protocolList, sprintList, journalList, moodList = []) => {
     const storageKey = `siddha_v2_${userId}`;
-    localStorage.setItem(storageKey, JSON.stringify({ profile, tasks: taskList, protocols: protocolList, sprints: sprintList, journals: journalList }));
+    localStorage.setItem(storageKey, JSON.stringify({ 
+      profile, 
+      tasks: taskList, 
+      protocols: protocolList, 
+      sprints: sprintList, 
+      journals: journalList,
+      moodHistory: moodList
+    }));
   }, []);
   
   useEffect(() => {
     if (user && userProfile) {
-      saveUserData(user.id, userProfile, tasks, protocols, sprints, journals);
+      saveUserData(user.id, userProfile, tasks, protocols, sprints, journals, moodHistory);
     }
-  }, [user, userProfile, tasks, protocols, sprints, journals, saveUserData]);
+  }, [user, userProfile, tasks, protocols, sprints, journals, moodHistory, saveUserData]);
   
   const handleAuthSuccess = async (authUser) => {
     setUser(authUser);
