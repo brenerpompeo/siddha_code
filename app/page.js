@@ -1902,6 +1902,216 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
         }}
         userProfile={userProfile}
       />
+      
+      {/* Edit Sprint Modal */}
+      <EditSprintModal
+        isOpen={isEditSprintModalOpen}
+        sprint={sprintToEdit}
+        onClose={() => {
+          setIsEditSprintModalOpen(false);
+          setSprintToEdit(null);
+        }}
+        onSave={handleUpdateSprint}
+      />
+    </div>
+  );
+};
+
+// Edit Sprint Modal Component
+const EditSprintModal = ({ isOpen, sprint, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    intention: '',
+    archetype: 'hero',
+    status: 'active',
+    duration: 7,
+    focusPillars: [],
+    dailyCommitments: [],
+    goals: []
+  });
+  
+  // Sync form data when sprint changes
+  useEffect(() => {
+    if (sprint) {
+      setFormData({
+        title: sprint.title || '',
+        intention: sprint.intention || '',
+        archetype: sprint.archetype || 'hero',
+        status: sprint.status || 'active',
+        duration: sprint.duration || 7,
+        focusPillars: sprint.focusPillars || [],
+        dailyCommitments: sprint.dailyCommitments || [],
+        goals: sprint.goals || []
+      });
+    }
+  }, [sprint]);
+  
+  if (!isOpen || !sprint) return null;
+  
+  const selectedArchetype = getArchetypeByKey(formData.archetype);
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({
+      ...sprint,
+      ...formData
+    });
+  };
+  
+  const togglePillar = (pillarKey) => {
+    setFormData(prev => {
+      const current = prev.focusPillars;
+      if (current.includes(pillarKey)) {
+        return { ...prev, focusPillars: current.filter(p => p !== pillarKey) };
+      }
+      if (current.length < 3) {
+        return { ...prev, focusPillars: [...current, pillarKey] };
+      }
+      return prev;
+    });
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-surface border border-white/10 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{selectedArchetype?.icon}</span>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Editar Sprint</h3>
+                <p className="text-xs text-white/50">Modifique as configurações do seu sprint</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Title */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Nome do Sprint</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary"
+              required
+            />
+          </div>
+          
+          {/* Intention */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Intenção</label>
+            <textarea
+              value={formData.intention}
+              onChange={(e) => setFormData(prev => ({ ...prev, intention: e.target.value }))}
+              className="w-full h-24 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary resize-none"
+            />
+          </div>
+          
+          {/* Status */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Status</label>
+            <div className="flex gap-2">
+              {['active', 'scheduled', 'paused', 'completed', 'cancelled'].map(status => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, status }))}
+                  className={cn(
+                    'px-3 py-2 rounded-lg text-xs transition-all',
+                    formData.status === status ? 'bg-primary text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  )}
+                >
+                  {status === 'active' ? 'Ativo' : 
+                   status === 'scheduled' ? 'Programado' :
+                   status === 'paused' ? 'Pausado' :
+                   status === 'completed' ? 'Concluído' : 'Cancelado'}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Duration */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Duração (dias)</label>
+            <div className="flex gap-2">
+              {[7, 14, 21, 30].map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, duration: d }))}
+                  className={cn(
+                    'flex-1 py-2 rounded-lg text-sm transition-all',
+                    formData.duration === d ? 'bg-primary text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  )}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Archetype */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Arquétipo</label>
+            <div className="grid grid-cols-4 gap-2 max-h-[140px] overflow-y-auto">
+              {ARCHETYPES.map(arch => (
+                <button
+                  key={arch.key}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, archetype: arch.key }))}
+                  className={cn(
+                    'p-2 rounded-lg text-center transition-all',
+                    formData.archetype === arch.key ? 'bg-primary/20 border-2 border-primary' : 'bg-white/5 border border-white/10'
+                  )}
+                >
+                  <span className="text-xl block">{arch.icon}</span>
+                  <span className="text-[10px] text-white/80">{arch.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Pillars */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Pilares de Foco ({formData.focusPillars.length}/3)</label>
+            <div className="flex flex-wrap gap-2">
+              {PILLARS.map(pillar => {
+                const isSelected = formData.focusPillars.includes(pillar.key);
+                return (
+                  <button
+                    key={pillar.key}
+                    type="button"
+                    onClick={() => togglePillar(pillar.key)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-xs transition-all',
+                      isSelected ? '' : 'bg-white/5 text-white/60'
+                    )}
+                    style={isSelected ? { backgroundColor: `${pillar.color}30`, color: pillar.color } : {}}
+                  >
+                    {pillar.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          
+          {/* Actions */}
+          <div className="flex gap-3 pt-4 border-t border-white/10">
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="flex-1">
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Salvar Alterações
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
