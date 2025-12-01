@@ -1547,7 +1547,633 @@ const CreateTaskModal = ({ isOpen, onClose, onCreateTask }) => {
 };
 
 // Create Sprint Modal
-const CreateSprintModal = ({ isOpen, onClose, onCreateSprint }) => {
+// ============ SPRINT BUILDER WITH GATEKEEPER ============
+
+const GATEKEEPER_STEPS = [
+  { 
+    id: 'intention', 
+    title: 'Intenção',
+    description: 'Defina a intenção clara do seu sprint',
+    icon: Target,
+    gatekeeperQuestion: 'Qual é a transformação que você busca neste ciclo?'
+  },
+  { 
+    id: 'archetype', 
+    title: 'Arquétipo',
+    description: 'Escolha a energia que guiará seu sprint',
+    icon: Sparkles,
+    gatekeeperQuestion: 'Qual energia arquetípica ressoa com sua jornada atual?'
+  },
+  { 
+    id: 'pillars', 
+    title: 'Pilares',
+    description: 'Selecione os pilares de foco',
+    icon: BarChart3,
+    gatekeeperQuestion: 'Quais áreas da vida você deseja desenvolver?'
+  },
+  { 
+    id: 'commitment', 
+    title: 'Compromisso',
+    description: 'Defina suas metas e tempo',
+    icon: Calendar,
+    gatekeeperQuestion: 'O que você está disposto a comprometer para este sprint?'
+  },
+  { 
+    id: 'alignment', 
+    title: 'Alinhamento',
+    description: 'Validação final do Gatekeeper',
+    icon: CheckCircle2,
+    gatekeeperQuestion: 'Este sprint está alinhado com seu Design?'
+  }
+];
+
+const SprintBuilder = ({ isOpen, onClose, onCreateSprint, userProfile }) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [sprintData, setSprintData] = useState({
+    title: '',
+    intention: '',
+    archetype: 'hero',
+    focusPillars: [],
+    duration: 7,
+    goals: [],
+    dailyCommitment: '',
+    alignmentScore: 7
+  });
+  const [newGoal, setNewGoal] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationPassed, setValidationPassed] = useState(false);
+  
+  if (!isOpen) return null;
+  
+  const currentStepData = GATEKEEPER_STEPS[currentStep];
+  const selectedArchetype = getArchetypeByKey(sprintData.archetype);
+  const hdType = getHDTypeByKey(userProfile?.hd_type || 'generator');
+  
+  const canProceed = () => {
+    switch (currentStep) {
+      case 0: // Intention
+        return sprintData.title.trim().length >= 3 && sprintData.intention.trim().length >= 10;
+      case 1: // Archetype
+        return !!sprintData.archetype;
+      case 2: // Pillars
+        return sprintData.focusPillars.length >= 1 && sprintData.focusPillars.length <= 3;
+      case 3: // Commitment
+        return sprintData.goals.length >= 1 && sprintData.dailyCommitment.trim().length >= 5;
+      case 4: // Alignment
+        return sprintData.alignmentScore >= 7 && validationPassed;
+      default:
+        return false;
+    }
+  };
+  
+  const handleNext = () => {
+    if (currentStep === GATEKEEPER_STEPS.length - 1) {
+      // Final step - create sprint
+      handleCreateSprint();
+    } else {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+  
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+      setValidationPassed(false);
+    }
+  };
+  
+  const handleCreateSprint = () => {
+    onCreateSprint({
+      title: sprintData.title.trim(),
+      intention: sprintData.intention.trim(),
+      archetype: sprintData.archetype,
+      focusPillars: sprintData.focusPillars,
+      duration: sprintData.duration,
+      goals: sprintData.goals,
+      dailyCommitment: sprintData.dailyCommitment.trim(),
+      alignmentScore: sprintData.alignmentScore,
+      tasks_count: 0,
+      mood_log: []
+    });
+    
+    // Reset state
+    setSprintData({
+      title: '',
+      intention: '',
+      archetype: 'hero',
+      focusPillars: [],
+      duration: 7,
+      goals: [],
+      dailyCommitment: '',
+      alignmentScore: 7
+    });
+    setCurrentStep(0);
+    setValidationPassed(false);
+    onClose();
+  };
+  
+  const addGoal = () => {
+    if (newGoal.trim()) {
+      setSprintData(prev => ({
+        ...prev,
+        goals: [...prev.goals, newGoal.trim()]
+      }));
+      setNewGoal('');
+    }
+  };
+  
+  const removeGoal = (index) => {
+    setSprintData(prev => ({
+      ...prev,
+      goals: prev.goals.filter((_, i) => i !== index)
+    }));
+  };
+  
+  const togglePillar = (pillarKey) => {
+    setSprintData(prev => {
+      const current = prev.focusPillars;
+      if (current.includes(pillarKey)) {
+        return { ...prev, focusPillars: current.filter(p => p !== pillarKey) };
+      }
+      if (current.length < 3) {
+        return { ...prev, focusPillars: [...current, pillarKey] };
+      }
+      return prev;
+    });
+  };
+  
+  const handleValidation = () => {
+    setIsValidating(true);
+    // Simulate gatekeeper validation
+    setTimeout(() => {
+      setIsValidating(false);
+      if (sprintData.alignmentScore >= 7) {
+        setValidationPassed(true);
+      }
+    }, 1500);
+  };
+  
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0: // Intention
+        return (
+          <div className="space-y-4">
+            <Input
+              label="Nome do Sprint"
+              placeholder="Ex: Despertar do Guerreiro Interior"
+              value={sprintData.title}
+              onChange={(e) => setSprintData(prev => ({ ...prev, title: e.target.value }))}
+              autoFocus
+            />
+            
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Intenção Principal</label>
+              <textarea
+                placeholder="Descreva a transformação que busca... O que mudará em você ao final deste sprint?"
+                value={sprintData.intention}
+                onChange={(e) => setSprintData(prev => ({ ...prev, intention: e.target.value }))}
+                className="w-full h-32 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary resize-none"
+              />
+              <p className="text-xs text-white/40 mt-1">
+                {sprintData.intention.length}/10 caracteres mínimos
+              </p>
+            </div>
+          </div>
+        );
+        
+      case 1: // Archetype
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-white/60 mb-4">
+              Escolha o arquétipo que melhor representa a energia que deseja cultivar neste sprint.
+            </p>
+            
+            <div className="grid grid-cols-3 gap-3 max-h-[280px] overflow-y-auto pr-2">
+              {ARCHETYPES.map(arch => (
+                <button
+                  key={arch.key}
+                  type="button"
+                  onClick={() => setSprintData(prev => ({ ...prev, archetype: arch.key }))}
+                  className={cn(
+                    'p-4 rounded-xl text-center transition-all duration-300',
+                    sprintData.archetype === arch.key 
+                      ? 'ring-2 ring-primary scale-105 shadow-lg' 
+                      : 'bg-white/5 border border-white/10 hover:border-white/20 hover:scale-102'
+                  )}
+                  style={sprintData.archetype === arch.key ? { 
+                    backgroundColor: `${arch.color}15`,
+                    borderColor: arch.color
+                  } : {}}
+                >
+                  <span className="text-3xl block mb-2">{arch.icon}</span>
+                  <span className="text-sm font-medium text-white">{arch.name}</span>
+                </button>
+              ))}
+            </div>
+            
+            {selectedArchetype && (
+              <div className="p-4 rounded-xl border border-white/10" style={{ backgroundColor: `${selectedArchetype.color}10` }}>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-2xl">{selectedArchetype.icon}</span>
+                  <div>
+                    <h4 className="font-semibold text-white">{selectedArchetype.name}</h4>
+                    <p className="text-xs text-white/50">{selectedArchetype.nameEn}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-primary italic mb-2">"{selectedArchetype.motto}"</p>
+                <p className="text-xs text-white/60">{selectedArchetype.description}</p>
+                <div className="flex gap-2 mt-3">
+                  {selectedArchetype.focus.map(f => {
+                    const pillar = getPillarByKey(f);
+                    return pillar ? (
+                      <span 
+                        key={f}
+                        className="text-xs px-2 py-1 rounded-full"
+                        style={{ backgroundColor: `${pillar.color}20`, color: pillar.color }}
+                      >
+                        {pillar.label}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+        
+      case 2: // Pillars
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-white/60">
+              Selecione de 1 a 3 pilares para focar durante este sprint. 
+              <span className="text-primary"> ({sprintData.focusPillars.length}/3 selecionados)</span>
+            </p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {PILLARS.map(pillar => {
+                const isSelected = sprintData.focusPillars.includes(pillar.key);
+                const isRecommended = selectedArchetype?.focus.includes(pillar.key);
+                return (
+                  <button
+                    key={pillar.key}
+                    type="button"
+                    onClick={() => togglePillar(pillar.key)}
+                    className={cn(
+                      'p-4 rounded-xl text-left transition-all duration-200 relative',
+                      isSelected 
+                        ? 'ring-2 scale-[1.02]' 
+                        : 'bg-white/5 border border-white/10 hover:border-white/20'
+                    )}
+                    style={isSelected ? { 
+                      backgroundColor: `${pillar.color}15`,
+                      ringColor: pillar.color,
+                      borderColor: pillar.color
+                    } : {}}
+                  >
+                    {isRecommended && !isSelected && (
+                      <span className="absolute top-2 right-2 text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary">
+                        Recomendado
+                      </span>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: `${pillar.color}20` }}
+                      >
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pillar.color }} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">{pillar.label}</p>
+                        <p className="text-xs text-white/50">{pillar.description?.slice(0, 30)}...</p>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <CheckCircle2 
+                        className="absolute bottom-3 right-3 w-5 h-5" 
+                        style={{ color: pillar.color }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+        
+      case 3: // Commitment
+        return (
+          <div className="space-y-4">
+            {/* Duration */}
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Duração do Sprint</label>
+              <div className="grid grid-cols-4 gap-2">
+                {[7, 14, 21, 30].map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setSprintData(prev => ({ ...prev, duration: d }))}
+                    className={cn(
+                      'py-3 rounded-xl text-center transition-all',
+                      sprintData.duration === d 
+                        ? 'bg-primary text-white font-semibold' 
+                        : 'bg-white/5 text-white/60 hover:bg-white/10'
+                    )}
+                  >
+                    <span className="block text-lg">{d}</span>
+                    <span className="text-xs">dias</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Daily Commitment */}
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Compromisso Diário</label>
+              <textarea
+                placeholder="O que você se compromete a fazer todos os dias? Ex: Dedicar 30 minutos ao meu desenvolvimento..."
+                value={sprintData.dailyCommitment}
+                onChange={(e) => setSprintData(prev => ({ ...prev, dailyCommitment: e.target.value }))}
+                className="w-full h-20 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary resize-none"
+              />
+            </div>
+            
+            {/* Goals */}
+            <div>
+              <label className="block text-sm text-white/70 mb-2">
+                Metas do Sprint ({sprintData.goals.length} definidas)
+              </label>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  placeholder="Adicione uma meta..."
+                  value={newGoal}
+                  onChange={(e) => setNewGoal(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addGoal())}
+                  className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
+                />
+                <Button type="button" onClick={addGoal} size="icon">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                {sprintData.goals.map((goal, idx) => (
+                  <div key={idx} className="flex items-center gap-2 p-3 bg-white/5 rounded-lg">
+                    <Target className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span className="flex-1 text-sm text-white">{goal}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeGoal(idx)}
+                      className="p-1 hover:bg-white/10 rounded"
+                    >
+                      <X className="w-4 h-4 text-white/50" />
+                    </button>
+                  </div>
+                ))}
+                {sprintData.goals.length === 0 && (
+                  <p className="text-center text-white/40 py-4 text-sm">
+                    Adicione pelo menos uma meta
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 4: // Alignment
+        return (
+          <div className="space-y-6">
+            {/* Summary */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <h4 className="font-semibold text-white mb-3">Resumo do Sprint</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-white/50">Nome:</span>
+                  <span className="text-white">{sprintData.title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Arquétipo:</span>
+                  <span className="text-white">{selectedArchetype?.icon} {selectedArchetype?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Duração:</span>
+                  <span className="text-white">{sprintData.duration} dias</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Pilares:</span>
+                  <div className="flex gap-1">
+                    {sprintData.focusPillars.map(p => {
+                      const pillar = getPillarByKey(p);
+                      return (
+                        <span 
+                          key={p}
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: pillar?.color }}
+                          title={pillar?.label}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Metas:</span>
+                  <span className="text-white">{sprintData.goals.length} definidas</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* HD Type Reminder */}
+            {hdType && (
+              <div className="p-4 rounded-xl border" style={{ 
+                backgroundColor: `${hdType.color}10`,
+                borderColor: `${hdType.color}30`
+              }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${hdType.color}30` }}>
+                    <Sparkles className="w-4 h-4" style={{ color: hdType.color }} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">{hdType.name}</p>
+                    <p className="text-xs text-white/50">Sua Estratégia: {hdType.strategy}</p>
+                  </div>
+                </div>
+                <p className="text-sm italic text-white/70">"{hdType.gutCheckPrompt}"</p>
+              </div>
+            )}
+            
+            {/* Alignment Score */}
+            <div>
+              <label className="block text-sm text-white/70 mb-2">
+                Nível de Alinhamento com seu Design
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={sprintData.alignmentScore}
+                  onChange={(e) => {
+                    setSprintData(prev => ({ ...prev, alignmentScore: parseInt(e.target.value) }));
+                    setValidationPassed(false);
+                  }}
+                  className="flex-1 accent-primary"
+                />
+                <span className={cn(
+                  'text-2xl font-bold w-12 text-center',
+                  sprintData.alignmentScore >= 7 ? 'text-green-500' : 'text-yellow-500'
+                )}>
+                  {sprintData.alignmentScore}
+                </span>
+              </div>
+              {sprintData.alignmentScore < 7 && (
+                <p className="text-sm text-yellow-500 mt-2">
+                  Score abaixo de 7 - O Gatekeeper recomenda reconsiderar este sprint.
+                </p>
+              )}
+            </div>
+            
+            {/* Validation Button */}
+            {!validationPassed && sprintData.alignmentScore >= 7 && (
+              <Button 
+                type="button" 
+                onClick={handleValidation}
+                loading={isValidating}
+                className="w-full"
+                variant="secondary"
+              >
+                {isValidating ? 'Validando com o Gatekeeper...' : 'Solicitar Validação do Gatekeeper'}
+              </Button>
+            )}
+            
+            {validationPassed && (
+              <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-center">
+                <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-2" />
+                <p className="text-green-400 font-medium">Gatekeeper Aprovado!</p>
+                <p className="text-sm text-white/60">Este sprint está alinhado com seu Design.</p>
+              </div>
+            )}
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-bold text-white">Sprint Builder</h3>
+              <p className="text-sm text-white/50">Gatekeeper Sequencial</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {/* Progress Steps */}
+          <div className="flex items-center justify-between">
+            {GATEKEEPER_STEPS.map((step, idx) => {
+              const StepIcon = step.icon;
+              const isActive = idx === currentStep;
+              const isCompleted = idx < currentStep;
+              
+              return (
+                <div key={step.id} className="flex items-center">
+                  <div className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center transition-all',
+                    isActive ? 'bg-primary text-white scale-110' :
+                    isCompleted ? 'bg-green-500 text-white' :
+                    'bg-white/10 text-white/40'
+                  )}>
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-5 h-5" />
+                    ) : (
+                      <StepIcon className="w-5 h-5" />
+                    )}
+                  </div>
+                  {idx < GATEKEEPER_STEPS.length - 1 && (
+                    <div className={cn(
+                      'w-8 lg:w-16 h-0.5 mx-1',
+                      idx < currentStep ? 'bg-green-500' : 'bg-white/10'
+                    )} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Step Info */}
+        <div className="px-6 py-4 bg-white/[0.02] border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+              {(() => {
+                const StepIcon = currentStepData.icon;
+                return <StepIcon className="w-6 h-6 text-primary" />;
+              })()}
+            </div>
+            <div>
+              <h4 className="font-semibold text-white">{currentStepData.title}</h4>
+              <p className="text-sm text-white/50">{currentStepData.description}</p>
+            </div>
+          </div>
+          <div className="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <p className="text-sm text-primary italic">
+              Gatekeeper: "{currentStepData.gatekeeperQuestion}"
+            </p>
+          </div>
+        </div>
+        
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {renderStepContent()}
+        </div>
+        
+        {/* Footer */}
+        <div className="p-6 border-t border-white/10 flex justify-between">
+          <Button 
+            type="button" 
+            variant="ghost" 
+            onClick={currentStep === 0 ? onClose : handleBack}
+          >
+            {currentStep === 0 ? 'Cancelar' : 'Voltar'}
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-white/40">
+              Passo {currentStep + 1} de {GATEKEEPER_STEPS.length}
+            </span>
+            <Button 
+              type="button"
+              onClick={handleNext}
+              disabled={!canProceed()}
+            >
+              {currentStep === GATEKEEPER_STEPS.length - 1 ? (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Criar Sprint
+                </>
+              ) : (
+                <>
+                  Próximo
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Keep old CreateSprintModal as a simple fallback (renamed)
+const CreateSprintModalSimple = ({ isOpen, onClose, onCreateSprint }) => {
   const [title, setTitle] = useState('');
   const [archetype, setArchetype] = useState('hero');
   const [duration, setDuration] = useState(7);
