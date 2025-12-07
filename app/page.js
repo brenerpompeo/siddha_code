@@ -94,6 +94,7 @@ import { CSS } from '@dnd-kit/utilities';
 // Navigation items
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'meta-year', label: 'Meta Anual', icon: Target },
   { id: 'sprints', label: 'Sprints', icon: Kanban },
   { id: 'journal', label: 'Journal', icon: BookOpen },
   { id: 'profile', label: 'Profile', icon: User },
