@@ -4466,7 +4466,7 @@ export default function App() {
     switch (currentPage) {
       case 'dashboard': return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} setSprints={setSprints} />;
       case 'meta-year': return <MetaYearPage metaYears={metaYears} setMetaYears={setMetaYears} sprints={sprints} setSprints={setSprints} tasks={tasks} userProfile={userProfile} />;
-      case 'sprints': return <SprintsPage tasks={tasks} setTasks={setTasks} userProfile={userProfile} onUpdateTask={handleUpdateTask} sprints={sprints} setSprints={setSprints} />;
+      case 'sprints': return <SprintsPage tasks={tasks} setTasks={setTasks} userProfile={userProfile} onUpdateTask={handleUpdateTask} sprints={sprints} setSprints={setSprints} metaYears={metaYears} />;
       case 'journal': return <JournalPage journals={journals} setJournals={setJournals} userProfile={userProfile} />;
       case 'profile': return <ProfilePage user={user} userProfile={userProfile} setUserProfile={setUserProfile} />;
       default: return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} setSprints={setSprints} />;
