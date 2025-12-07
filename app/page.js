@@ -2287,8 +2287,35 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
         isOpen={isCreateSprintModalOpen}
         onClose={() => setIsCreateSprintModalOpen(false)}
         onCreateSprint={(sprint) => {
-          const newSprint = { ...sprint, id: uuidv4(), status: 'active', created_at: new Date().toISOString(), tasks_count: 0, completed_tasks: 0 };
+          const sprintId = uuidv4();
+          const currentMetaYear = metaYears?.find(m => m.status === 'active');
+          const newSprint = { 
+            ...sprint, 
+            id: sprintId, 
+            status: 'active', 
+            created_at: new Date().toISOString(), 
+            tasks_count: sprint.goals?.length || 0, 
+            completed_tasks: 0,
+            metaYearId: currentMetaYear?.id || null
+          };
           setSprints(prev => [...prev, newSprint]);
+          
+          // Create tasks from goals automatically
+          if (sprint.goals && sprint.goals.length > 0) {
+            const newTasks = sprint.goals.map((goal, index) => ({
+              id: uuidv4(),
+              title: goal,
+              content: goal,
+              pillar: sprint.focusPillars?.[index % sprint.focusPillars.length] || 'personal',
+              status: 'potential',
+              sprintId: sprintId,
+              gut_check_score: null,
+              xp: 30,
+              created_at: new Date().toISOString()
+            }));
+            setTasks(prev => [...prev, ...newTasks]);
+          }
+          
           setSelectedSprint(newSprint);
         }}
         userProfile={userProfile}
