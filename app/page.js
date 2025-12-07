@@ -3942,19 +3942,29 @@ export default function App() {
       setSprints(data.sprints || []);
       setJournals(data.journals || []);
       setMoodHistory(data.moodHistory || []);
+      setMetaYears(data.metaYears || []);
     } else {
       const newProfile = { ...DEFAULT_PROFILE, username: authUser.email?.split('@')[0] || 'Warrior' };
+      const currentYear = new Date().getFullYear();
+      const defaultMetaYear = {
+        id: uuidv4(),
+        year: currentYear,
+        theme: `Ano da Transformação ${currentYear}`,
+        intention: 'Evoluir em todas as áreas da vida com consistência e propósito',
+        status: 'active'
+      };
       setUserProfile(newProfile);
       setTasks(DEFAULT_TASKS);
       setProtocols(DEFAULT_PROTOCOLS);
       setSprints([]);
       setJournals([]);
       setMoodHistory([]);
-      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS, [], [], []);
+      setMetaYears([defaultMetaYear]);
+      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS, [], [], [], [defaultMetaYear]);
     }
   };
   
-  const saveUserData = useCallback((userId, profile, taskList, protocolList, sprintList, journalList, moodList = []) => {
+  const saveUserData = useCallback((userId, profile, taskList, protocolList, sprintList, journalList, moodList = [], metaYearList = []) => {
     const storageKey = `siddha_v2_${userId}`;
     localStorage.setItem(storageKey, JSON.stringify({ 
       profile, 
@@ -3962,15 +3972,16 @@ export default function App() {
       protocols: protocolList, 
       sprints: sprintList, 
       journals: journalList,
-      moodHistory: moodList
+      moodHistory: moodList,
+      metaYears: metaYearList
     }));
   }, []);
   
   useEffect(() => {
     if (user && userProfile) {
-      saveUserData(user.id, userProfile, tasks, protocols, sprints, journals, moodHistory);
+      saveUserData(user.id, userProfile, tasks, protocols, sprints, journals, moodHistory, metaYears);
     }
-  }, [user, userProfile, tasks, protocols, sprints, journals, moodHistory, saveUserData]);
+  }, [user, userProfile, tasks, protocols, sprints, journals, moodHistory, metaYears, saveUserData]);
   
   const handleAuthSuccess = async (authUser) => {
     setUser(authUser);
