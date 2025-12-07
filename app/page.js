@@ -1175,6 +1175,395 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
   );
 };
 
+// ============ META YEAR PAGE ============
+
+const MetaYearPage = ({ metaYears, setMetaYears, sprints, setSprints, tasks, userProfile }) => {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [metaYearToEdit, setMetaYearToEdit] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(null);
+  
+  const currentYear = new Date().getFullYear();
+  const activeMetaYear = metaYears.find(m => m.status === 'active') || metaYears[0];
+  
+  // Auto-select active year
+  useEffect(() => {
+    if (!selectedYear && activeMetaYear) {
+      setSelectedYear(activeMetaYear);
+    }
+  }, [activeMetaYear, selectedYear]);
+  
+  // Get sprints for selected meta year
+  const yearSprints = useMemo(() => {
+    if (!selectedYear) return [];
+    return sprints.filter(s => s.metaYearId === selectedYear.id || 
+      (new Date(s.created_at).getFullYear() === selectedYear.year));
+  }, [sprints, selectedYear]);
+  
+  // Stats
+  const stats = useMemo(() => {
+    const activeSprints = yearSprints.filter(s => s.status === 'active').length;
+    const completedSprints = yearSprints.filter(s => s.status === 'completed').length;
+    const totalGoals = yearSprints.reduce((acc, s) => acc + (s.goals?.length || 0), 0);
+    const completedTasks = tasks.filter(t => 
+      yearSprints.some(s => s.id === t.sprintId) && t.status === 'wisdom'
+    ).length;
+    return { activeSprints, completedSprints, totalGoals, completedTasks };
+  }, [yearSprints, tasks]);
+  
+  const handleCreateMetaYear = (data) => {
+    const newMetaYear = {
+      id: uuidv4(),
+      ...data,
+      status: 'active',
+      created_at: new Date().toISOString()
+    };
+    // Set other years to inactive if this is active
+    setMetaYears(prev => prev.map(m => ({ ...m, status: 'completed' })).concat(newMetaYear));
+    setSelectedYear(newMetaYear);
+    setIsCreateModalOpen(false);
+  };
+  
+  const handleUpdateMetaYear = (data) => {
+    setMetaYears(prev => prev.map(m => 
+      m.id === data.id ? { ...m, ...data } : m
+    ));
+    if (selectedYear?.id === data.id) {
+      setSelectedYear(prev => prev ? { ...prev, ...data } : null);
+    }
+    setIsEditModalOpen(false);
+    setMetaYearToEdit(null);
+  };
+  
+  const handleDeleteMetaYear = (id) => {
+    setMetaYears(prev => prev.filter(m => m.id !== id));
+    if (selectedYear?.id === id) {
+      setSelectedYear(metaYears.find(m => m.id !== id) || null);
+    }
+  };
+  
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Meta Anual</h1>
+          <p className="text-white/50">Organize seus sprints dentro de um objetivo macro</p>
+        </div>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nova Meta Anual
+        </Button>
+      </div>
+      
+      {/* Year Selector */}
+      <div className="flex gap-3 overflow-x-auto pb-2">
+        {metaYears.map(my => (
+          <button
+            key={my.id}
+            onClick={() => setSelectedYear(my)}
+            className={cn(
+              'px-4 py-3 rounded-xl border transition-all min-w-[180px]',
+              selectedYear?.id === my.id 
+                ? 'bg-primary/20 border-primary' 
+                : 'bg-white/5 border-white/10 hover:border-white/20'
+            )}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-lg font-bold text-white">{my.year}</span>
+              <span className={cn(
+                'text-xs px-2 py-0.5 rounded-full',
+                my.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/50'
+              )}>
+                {my.status === 'active' ? 'Ativo' : 'Concluído'}
+              </span>
+            </div>
+            <p className="text-sm text-white/70 truncate">{my.theme}</p>
+          </button>
+        ))}
+        
+        {metaYears.length === 0 && (
+          <div className="flex-1 text-center py-8 text-white/40">
+            <Target className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p>Nenhuma meta anual criada</p>
+            <p className="text-sm">Crie sua primeira meta para organizar seus sprints</p>
+          </div>
+        )}
+      </div>
+      
+      {/* Selected Year Details */}
+      {selectedYear && (
+        <>
+          <GlassCard className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Target className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">{selectedYear.theme}</h2>
+                  <p className="text-sm text-white/50">Ano {selectedYear.year}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setMetaYearToEdit(selectedYear);
+                  setIsEditModalOpen(true);
+                }}>
+                  <Edit3 className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDeleteMetaYear(selectedYear.id)} className="text-red-400 hover:text-red-300">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {selectedYear.intention && (
+              <p className="text-white/70 mb-6 italic">{selectedYear.intention}</p>
+            )}
+            
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-white/[0.02] rounded-xl text-center">
+                <p className="text-3xl font-bold text-primary">{stats.activeSprints}</p>
+                <p className="text-xs text-white/50">Sprints Ativos</p>
+              </div>
+              <div className="p-4 bg-white/[0.02] rounded-xl text-center">
+                <p className="text-3xl font-bold text-green-500">{stats.completedSprints}</p>
+                <p className="text-xs text-white/50">Sprints Concluídos</p>
+              </div>
+              <div className="p-4 bg-white/[0.02] rounded-xl text-center">
+                <p className="text-3xl font-bold text-yellow-500">{stats.totalGoals}</p>
+                <p className="text-xs text-white/50">Metas Definidas</p>
+              </div>
+              <div className="p-4 bg-white/[0.02] rounded-xl text-center">
+                <p className="text-3xl font-bold text-blue-500">{stats.completedTasks}</p>
+                <p className="text-xs text-white/50">Tarefas Concluídas</p>
+              </div>
+            </div>
+          </GlassCard>
+          
+          {/* Sprints Timeline */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Sprints do Ano</h3>
+            
+            {yearSprints.length === 0 ? (
+              <GlassCard className="p-8 text-center">
+                <Kanban className="w-12 h-12 mx-auto mb-2 text-white/30" />
+                <p className="text-white/50">Nenhum sprint neste ano</p>
+                <p className="text-sm text-white/30">Crie sprints na página de Sprints</p>
+              </GlassCard>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {yearSprints.map(sprint => {
+                  const archetype = getArchetypeByKey(sprint.archetype);
+                  const sprintTasks = tasks.filter(t => t.sprintId === sprint.id);
+                  const completedCount = sprintTasks.filter(t => t.status === 'wisdom').length;
+                  const progress = sprintTasks.length > 0 ? Math.round(completedCount / sprintTasks.length * 100) : 0;
+                  
+                  return (
+                    <GlassCard key={sprint.id} className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{archetype?.icon}</span>
+                          <div>
+                            <h4 className="font-medium text-white">{sprint.title}</h4>
+                            <p className="text-xs text-white/50">{sprint.duration} dias • {archetype?.name}</p>
+                          </div>
+                        </div>
+                        <SprintStatusBadge status={sprint.status} />
+                      </div>
+                      
+                      {/* Progress */}
+                      <div className="mb-3">
+                        <div className="flex justify-between text-xs text-white/50 mb-1">
+                          <span>{sprintTasks.length} tarefas</span>
+                          <span>{progress}%</span>
+                        </div>
+                        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
+                        </div>
+                      </div>
+                      
+                      {/* Goals Preview */}
+                      {sprint.goals?.length > 0 && (
+                        <div className="space-y-1">
+                          {sprint.goals.slice(0, 3).map((goal, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs text-white/60">
+                              <Target className="w-3 h-3 text-primary flex-shrink-0" />
+                              <span className="truncate">{goal}</span>
+                            </div>
+                          ))}
+                          {sprint.goals.length > 3 && (
+                            <p className="text-xs text-white/40">+{sprint.goals.length - 3} mais</p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Pillars */}
+                      {sprint.focusPillars?.length > 0 && (
+                        <div className="flex gap-1 mt-3">
+                          {sprint.focusPillars.map(p => {
+                            const pillar = getPillarByKey(p);
+                            return (
+                              <span key={p} className="w-4 h-4 rounded-full" style={{ backgroundColor: pillar?.color }} title={pillar?.label} />
+                            );
+                          })}
+                        </div>
+                      )}
+                    </GlassCard>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+      
+      {/* Create Meta Year Modal */}
+      <MetaYearModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleCreateMetaYear}
+      />
+      
+      {/* Edit Meta Year Modal */}
+      <MetaYearModal
+        isOpen={isEditModalOpen}
+        metaYear={metaYearToEdit}
+        onClose={() => { setIsEditModalOpen(false); setMetaYearToEdit(null); }}
+        onSave={handleUpdateMetaYear}
+      />
+    </div>
+  );
+};
+
+// Meta Year Modal
+const MetaYearModal = ({ isOpen, metaYear, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    year: new Date().getFullYear(),
+    theme: '',
+    intention: ''
+  });
+  
+  useEffect(() => {
+    if (metaYear) {
+      setFormData({
+        year: metaYear.year,
+        theme: metaYear.theme || '',
+        intention: metaYear.intention || ''
+      });
+    } else {
+      setFormData({
+        year: new Date().getFullYear(),
+        theme: '',
+        intention: ''
+      });
+    }
+  }, [metaYear]);
+  
+  if (!isOpen) return null;
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({
+      ...metaYear,
+      ...formData
+    });
+  };
+  
+  // Pre-defined themes
+  const themesSuggestions = [
+    'Ano da Transformação',
+    'Ano da Soberania',
+    'Ano da Construção',
+    'Ano da Expansão',
+    'Ano do Despertar',
+    'Ano da Maestria',
+    'Ano da Cura',
+    'Ano da Abundância'
+  ];
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-surface border border-white/10 rounded-xl w-full max-w-lg">
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white">
+              {metaYear ? 'Editar Meta Anual' : 'Nova Meta Anual'}
+            </h3>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Year */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Ano</label>
+            <input
+              type="number"
+              value={formData.year}
+              onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary"
+              min="2020"
+              max="2100"
+              required
+            />
+          </div>
+          
+          {/* Theme */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Tema do Ano</label>
+            <input
+              type="text"
+              value={formData.theme}
+              onChange={(e) => setFormData(prev => ({ ...prev, theme: e.target.value }))}
+              placeholder="Ex: Ano da Transformação"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
+              required
+            />
+            {/* Suggestions */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {themesSuggestions.slice(0, 4).map(theme => (
+                <button
+                  key={theme}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, theme: `${theme} ${formData.year}` }))}
+                  className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-all"
+                >
+                  {theme}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Intention */}
+          <div>
+            <label className="block text-sm text-white/70 mb-2">Intenção Macro</label>
+            <textarea
+              value={formData.intention}
+              onChange={(e) => setFormData(prev => ({ ...prev, intention: e.target.value }))}
+              placeholder="Qual é o grande objetivo deste ano?"
+              className="w-full h-24 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-primary resize-none"
+            />
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="flex-1">
+              {metaYear ? 'Salvar' : 'Criar Meta Anual'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // ============ SPRINTS PAGE - THE COMMAND CENTER ============
 
 // Sprint Status Badge Component
