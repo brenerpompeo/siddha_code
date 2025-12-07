@@ -3876,6 +3876,7 @@ export default function App() {
   const [sprints, setSprints] = useState([]);
   const [journals, setJournals] = useState([]);
   const [moodHistory, setMoodHistory] = useState([]);
+  const [metaYears, setMetaYears] = useState([]);
   
   const supabase = createClient();
   
