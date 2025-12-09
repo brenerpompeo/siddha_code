@@ -62,15 +62,23 @@ export default function OnboardingFlow({ user, onComplete }) {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
+      // Ensure birth_date is a valid timestamp string for Postgres
+      const formattedDate = new Date(formData.birth_date).toISOString();
+      
+      const payload = {
           id: user.id,
           email: user.email,
           ...formData,
+          birth_date: formattedDate,
           ikigai_status: {},
           updated_at: new Date()
-        });
+      };
+      
+      console.log('Saving profile:', payload);
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(payload);
 
       if (error) throw error;
       onComplete();
