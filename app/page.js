@@ -4449,50 +4449,84 @@ export default function App() {
   }, []);
   
   const loadUserData = async (authUser) => {
-    const storageKey = `siddha_v2_${authUser.id}`;
-    const savedData = localStorage.getItem(storageKey);
-    if (savedData) {
-      const data = JSON.parse(savedData);
-      setUserProfile(data.profile);
-      setTasks(data.tasks || []);
-      setProtocols(data.protocols || []);
-      setSprints(data.sprints || []);
-      setJournals(data.journals || []);
-      setMoodHistory(data.moodHistory || []);
-      setCiclos(data.ciclos || []);
-    } else {
-      const newProfile = { ...DEFAULT_PROFILE, username: authUser.email?.split('@')[0] || 'Warrior' };
-      const currentYear = new Date().getFullYear();
-      const defaultCiclo = {
-        id: uuidv4(),
-        year: currentYear,
-        theme: `Ano da Transformação ${currentYear}`,
-        intention: 'Evoluir em todas as áreas da vida com consistência e propósito',
-        status: 'active'
-      };
-      setUserProfile(newProfile);
-      setTasks(DEFAULT_TASKS);
-      setProtocols(DEFAULT_PROTOCOLS);
-      setSprints([]);
-      setJournals([]);
-      setMoodHistory([]);
-      setCiclos([defaultCiclo]);
-      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS, [], [], [], [defaultCiclo]);
+    try {
+      console.log('Loading user data from Supabase...');
+      // 1. Fetch Profile
+      let { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+         console.error('Profile fetch error:', profileError);
+      }
+
+      // If no profile in DB, create default
+      if (!profile) {
+         console.log('No profile found, creating default...');
+         const newProfile = { 
+            id: authUser.id,
+            email: authUser.email,
+            full_name: authUser.email?.split('@')[0] || 'Warrior',
+            ikigai_status: {},
+            created_at: new Date()
+         };
+         
+         const { data: createdProfile, error: createError } = await supabase
+            .from('profiles')
+            .upsert(newProfile)
+            .select()
+            .single();
+            
+         if (createError) throw createError;
+         profile = createdProfile;
+      }
+
+      setUserProfile(profile);
+
+      // 2. Fetch Sprints
+      const { data: fetchedSprints } = await supabase.from('sprints').select('*').eq('user_id', authUser.id);
+      setSprints(fetchedSprints || []);
+
+      // 3. Fetch Tasks
+      const { data: fetchedTasks } = await supabase.from('tasks').select('*').eq('user_id', authUser.id);
+      setTasks(fetchedTasks || []);
+
+      // 4. Fetch Meta Years (Ciclos)
+      const { data: fetchedCiclos } = await supabase.from('meta_years').select('*').eq('user_id', authUser.id);
+      
+      if (!fetchedCiclos || fetchedCiclos.length === 0) {
+          // Create default Ciclo if none exists
+          const currentYear = new Date().getFullYear();
+          const defaultCiclo = {
+            year: currentYear,
+            theme: `Ano da Transformação ${currentYear}`,
+            intention: 'Evoluir em todas as áreas da vida com consistência e propósito',
+            status: 'active',
+            user_id: authUser.id
+          };
+          // Insert silently
+          const { data: newCiclo } = await supabase.from('meta_years').insert(defaultCiclo).select().single();
+          setCiclos(newCiclo ? [newCiclo] : []);
+      } else {
+          setCiclos(fetchedCiclos);
+      }
+
+      // 5. Fetch Journals
+      const { data: fetchedJournals } = await supabase.from('journal_entries').select('*').eq('user_id', authUser.id);
+      setJournals(fetchedJournals || []);
+
+    } catch (error) {
+      console.error('Critical error loading user data:', error);
+      // Fallback?
     }
   };
-  
-  const saveUserData = useCallback((userId, profile, taskList, protocolList, sprintList, journalList, moodList = [], cicloList = []) => {
-    const storageKey = `siddha_v2_${userId}`;
-    localStorage.setItem(storageKey, JSON.stringify({ 
-      profile, 
-      tasks: taskList, 
-      protocols: protocolList, 
-      sprints: sprintList, 
-      journals: journalList,
-      moodHistory: moodList,
-      ciclos: cicloList
-    }));
-  }, []);
+
+  // Deprecated: saveUserData is no longer used for auto-saving everything to local storage
+  // Instead, individual components should save to Supabase
+  const saveUserData = useCallback(() => {}, []);
+
   
   useEffect(() => {
     if (user && userProfile) {
