@@ -53,15 +53,7 @@ import {
   Frown,
   SmilePlus,
   Angry,
-import { Compass, MessageCircle, Heart, DollarSign, Target as TargetIcon } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { StarsBackground } from '@/components/ui/stars-background';
-import { ExpandableChat, ExpandableChatHeader, ExpandableChatBody, ExpandableChatFooter } from '@/components/ui/expandable-chat';
-import { ChatMessageList } from '@/components/ui/chat-message-list';
-import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from '@/components/ui/chat-bubble';
-import { ChatInput } from '@/components/ui/chat-input';
-import IkigaiBuilder from '@/components/IkigaiBuilder';
-import OnboardingFlow from '@/components/OnboardingFlow';
+ // imports moved
 
   MessageCircle,
   ArrowUp,
