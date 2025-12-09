@@ -4529,8 +4529,19 @@ export default function App() {
 
   
   useEffect(() => {
+    // Check if onboarding is done (profile has zodiac) but no sprints exist
+    if (user && userProfile && userProfile.zodiac_sign && sprints.length === 0 && currentPage !== 'sprints') {
+       // Redirect to sprints to prompt creation
+       console.log('Redirecting to Sprints for creation...');
+       setCurrentPage('sprints');
+       // We can also trigger a visual cue or open the modal if we pass a prop
+    }
+  }, [user, userProfile, sprints, currentPage]);
+
+  useEffect(() => {
     if (user && userProfile) {
-      saveUserData(user.id, userProfile, tasks, protocols, sprints, journals, moodHistory, ciclos);
+       // Removed auto-save to localStorage to prevent overwriting DB data with stale local state
+       // saveUserData(user.id, userProfile, tasks, protocols, sprints, journals, moodHistory, ciclos);
     }
   }, [user, userProfile, tasks, protocols, sprints, journals, moodHistory, ciclos, saveUserData]);
   
