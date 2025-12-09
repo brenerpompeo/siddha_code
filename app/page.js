@@ -94,7 +94,7 @@ import { CSS } from '@dnd-kit/utilities';
 // Navigation items
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'meta-year', label: 'Meta Anual', icon: Target },
+  { id: 'ciclo', label: 'Ciclo', icon: Target },
   { id: 'sprints', label: 'Sprints', icon: Kanban },
   { id: 'journal', label: 'Journal', icon: BookOpen },
   { id: 'profile', label: 'Profile', icon: User },
@@ -1177,26 +1177,26 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
 
 // ============ META YEAR PAGE ============
 
-const MetaYearPage = ({ metaYears, setMetaYears, sprints, setSprints, tasks, userProfile }) => {
+const CicloPage = ({ ciclos, setCiclos, sprints, setSprints, tasks, userProfile }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [metaYearToEdit, setMetaYearToEdit] = useState(null);
+  const [cicloToEdit, setCicloToEdit] = useState(null);
   const [selectedYear, setSelectedYear] = useState(null);
   
   const currentYear = new Date().getFullYear();
-  const activeMetaYear = metaYears.find(m => m.status === 'active') || metaYears[0];
+  const activeCiclo = ciclos.find(m => m.status === 'active') || ciclos[0];
   
   // Auto-select active year
   useEffect(() => {
-    if (!selectedYear && activeMetaYear) {
-      setSelectedYear(activeMetaYear);
+    if (!selectedYear && activeCiclo) {
+      setSelectedYear(activeCiclo);
     }
-  }, [activeMetaYear, selectedYear]);
+  }, [activeCiclo, selectedYear]);
   
   // Get sprints for selected meta year
   const yearSprints = useMemo(() => {
     if (!selectedYear) return [];
-    return sprints.filter(s => s.metaYearId === selectedYear.id || 
+    return sprints.filter(s => s.cicloId === selectedYear.id || 
       (new Date(s.created_at).getFullYear() === selectedYear.year));
   }, [sprints, selectedYear]);
   
@@ -1211,34 +1211,34 @@ const MetaYearPage = ({ metaYears, setMetaYears, sprints, setSprints, tasks, use
     return { activeSprints, completedSprints, totalGoals, completedTasks };
   }, [yearSprints, tasks]);
   
-  const handleCreateMetaYear = (data) => {
-    const newMetaYear = {
+  const handleCreateCiclo = (data) => {
+    const newCiclo = {
       id: uuidv4(),
       ...data,
       status: 'active',
       created_at: new Date().toISOString()
     };
     // Set other years to inactive if this is active
-    setMetaYears(prev => prev.map(m => ({ ...m, status: 'completed' })).concat(newMetaYear));
-    setSelectedYear(newMetaYear);
+    setCiclos(prev => prev.map(m => ({ ...m, status: 'completed' })).concat(newCiclo));
+    setSelectedYear(newCiclo);
     setIsCreateModalOpen(false);
   };
   
-  const handleUpdateMetaYear = (data) => {
-    setMetaYears(prev => prev.map(m => 
+  const handleUpdateCiclo = (data) => {
+    setCiclos(prev => prev.map(m => 
       m.id === data.id ? { ...m, ...data } : m
     ));
     if (selectedYear?.id === data.id) {
       setSelectedYear(prev => prev ? { ...prev, ...data } : null);
     }
     setIsEditModalOpen(false);
-    setMetaYearToEdit(null);
+    setCicloToEdit(null);
   };
   
-  const handleDeleteMetaYear = (id) => {
-    setMetaYears(prev => prev.filter(m => m.id !== id));
+  const handleDeleteCiclo = (id) => {
+    setCiclos(prev => prev.filter(m => m.id !== id));
     if (selectedYear?.id === id) {
-      setSelectedYear(metaYears.find(m => m.id !== id) || null);
+      setSelectedYear(ciclos.find(m => m.id !== id) || null);
     }
   };
   
@@ -1247,18 +1247,18 @@ const MetaYearPage = ({ metaYears, setMetaYears, sprints, setSprints, tasks, use
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Meta Anual</h1>
+          <h1 className="text-2xl font-bold text-white">Ciclo</h1>
           <p className="text-white/50">Organize seus sprints dentro de um objetivo macro</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Nova Meta Anual
+          Nova Ciclo
         </Button>
       </div>
       
       {/* Year Selector */}
       <div className="flex gap-3 overflow-x-auto pb-2">
-        {metaYears.map(my => (
+        {ciclos.map(my => (
           <button
             key={my.id}
             onClick={() => setSelectedYear(my)}
@@ -1282,7 +1282,7 @@ const MetaYearPage = ({ metaYears, setMetaYears, sprints, setSprints, tasks, use
           </button>
         ))}
         
-        {metaYears.length === 0 && (
+        {ciclos.length === 0 && (
           <div className="flex-1 text-center py-8 text-white/40">
             <Target className="w-12 h-12 mx-auto mb-2 opacity-50" />
             <p>Nenhuma meta anual criada</p>
@@ -1307,12 +1307,12 @@ const MetaYearPage = ({ metaYears, setMetaYears, sprints, setSprints, tasks, use
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={() => {
-                  setMetaYearToEdit(selectedYear);
+                  setCicloToEdit(selectedYear);
                   setIsEditModalOpen(true);
                 }}>
                   <Edit3 className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDeleteMetaYear(selectedYear.id)} className="text-red-400 hover:text-red-300">
+                <Button variant="ghost" size="sm" onClick={() => handleDeleteCiclo(selectedYear.id)} className="text-red-400 hover:text-red-300">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -1421,25 +1421,25 @@ const MetaYearPage = ({ metaYears, setMetaYears, sprints, setSprints, tasks, use
       )}
       
       {/* Create Meta Year Modal */}
-      <MetaYearModal
+      <CicloModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSave={handleCreateMetaYear}
+        onSave={handleCreateCiclo}
       />
       
       {/* Edit Meta Year Modal */}
-      <MetaYearModal
+      <CicloModal
         isOpen={isEditModalOpen}
-        metaYear={metaYearToEdit}
-        onClose={() => { setIsEditModalOpen(false); setMetaYearToEdit(null); }}
-        onSave={handleUpdateMetaYear}
+        ciclo={cicloToEdit}
+        onClose={() => { setIsEditModalOpen(false); setCicloToEdit(null); }}
+        onSave={handleUpdateCiclo}
       />
     </div>
   );
 };
 
 // Meta Year Modal
-const MetaYearModal = ({ isOpen, metaYear, onClose, onSave }) => {
+const CicloModal = ({ isOpen, ciclo, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     year: new Date().getFullYear(),
     theme: '',
@@ -1447,11 +1447,11 @@ const MetaYearModal = ({ isOpen, metaYear, onClose, onSave }) => {
   });
   
   useEffect(() => {
-    if (metaYear) {
+    if (ciclo) {
       setFormData({
-        year: metaYear.year,
-        theme: metaYear.theme || '',
-        intention: metaYear.intention || ''
+        year: ciclo.year,
+        theme: ciclo.theme || '',
+        intention: ciclo.intention || ''
       });
     } else {
       setFormData({
@@ -1460,14 +1460,14 @@ const MetaYearModal = ({ isOpen, metaYear, onClose, onSave }) => {
         intention: ''
       });
     }
-  }, [metaYear]);
+  }, [ciclo]);
   
   if (!isOpen) return null;
   
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({
-      ...metaYear,
+      ...ciclo,
       ...formData
     });
   };
@@ -1490,7 +1490,7 @@ const MetaYearModal = ({ isOpen, metaYear, onClose, onSave }) => {
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">
-              {metaYear ? 'Editar Meta Anual' : 'Nova Meta Anual'}
+              {ciclo ? 'Editar Ciclo' : 'Nova Ciclo'}
             </h3>
             <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg">
               <X className="w-5 h-5" />
@@ -1555,7 +1555,7 @@ const MetaYearModal = ({ isOpen, metaYear, onClose, onSave }) => {
               Cancelar
             </Button>
             <Button type="submit" className="flex-1">
-              {metaYear ? 'Salvar' : 'Criar Meta Anual'}
+              {ciclo ? 'Salvar' : 'Criar Ciclo'}
             </Button>
           </div>
         </form>
@@ -2049,7 +2049,7 @@ const SprintDetailPanel = ({ sprint, onClose, onUpdateStatus, onEdit, onDelete, 
   );
 };
 
-const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setSprints, metaYears = [], setMetaYears }) => {
+const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setSprints, ciclos = [], setCiclos }) => {
   const [viewMode, setViewMode] = useState('kanban');
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
@@ -2070,7 +2070,7 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
   
   // Get current Meta Year
   const currentYear = new Date().getFullYear();
-  const currentMetaYear = metaYears?.find(m => m.year === currentYear);
+  const currentCiclo = ciclos?.find(m => m.year === currentYear);
   
   const viewTabs = [
     { id: 'kanban', label: 'Kanban', icon: Kanban },
@@ -2166,10 +2166,10 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          {currentMetaYear && (
+          {currentCiclo && (
             <p className="text-xs text-primary mb-1 flex items-center gap-1">
               <Star className="w-3 h-3" />
-              Parte do "{currentMetaYear.theme || `Ano ${currentYear}`}"
+              Parte do "{currentCiclo.theme || `Ano ${currentYear}`}"
             </p>
           )}
           <h1 className="text-2xl font-bold text-white">Command Center</h1>
@@ -2288,7 +2288,7 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
         onClose={() => setIsCreateSprintModalOpen(false)}
         onCreateSprint={(sprint) => {
           const sprintId = uuidv4();
-          const currentMetaYear = metaYears?.find(m => m.status === 'active');
+          const currentCiclo = ciclos?.find(m => m.status === 'active');
           const newSprint = { 
             ...sprint, 
             id: sprintId, 
@@ -2296,7 +2296,7 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
             created_at: new Date().toISOString(), 
             tasks_count: sprint.goals?.length || 0, 
             completed_tasks: 0,
-            metaYearId: currentMetaYear?.id || null
+            cicloId: currentCiclo?.id || null
           };
           setSprints(prev => [...prev, newSprint]);
           
@@ -4292,7 +4292,7 @@ export default function App() {
   const [sprints, setSprints] = useState([]);
   const [journals, setJournals] = useState([]);
   const [moodHistory, setMoodHistory] = useState([]);
-  const [metaYears, setMetaYears] = useState([]);
+  const [ciclos, setCiclos] = useState([]);
   
   const supabase = createClient();
   
@@ -4358,11 +4358,11 @@ export default function App() {
       setSprints(data.sprints || []);
       setJournals(data.journals || []);
       setMoodHistory(data.moodHistory || []);
-      setMetaYears(data.metaYears || []);
+      setCiclos(data.ciclos || []);
     } else {
       const newProfile = { ...DEFAULT_PROFILE, username: authUser.email?.split('@')[0] || 'Warrior' };
       const currentYear = new Date().getFullYear();
-      const defaultMetaYear = {
+      const defaultCiclo = {
         id: uuidv4(),
         year: currentYear,
         theme: `Ano da Transformação ${currentYear}`,
@@ -4375,12 +4375,12 @@ export default function App() {
       setSprints([]);
       setJournals([]);
       setMoodHistory([]);
-      setMetaYears([defaultMetaYear]);
-      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS, [], [], [], [defaultMetaYear]);
+      setCiclos([defaultCiclo]);
+      saveUserData(authUser.id, newProfile, DEFAULT_TASKS, DEFAULT_PROTOCOLS, [], [], [], [defaultCiclo]);
     }
   };
   
-  const saveUserData = useCallback((userId, profile, taskList, protocolList, sprintList, journalList, moodList = [], metaYearList = []) => {
+  const saveUserData = useCallback((userId, profile, taskList, protocolList, sprintList, journalList, moodList = [], cicloList = []) => {
     const storageKey = `siddha_v2_${userId}`;
     localStorage.setItem(storageKey, JSON.stringify({ 
       profile, 
@@ -4389,15 +4389,15 @@ export default function App() {
       sprints: sprintList, 
       journals: journalList,
       moodHistory: moodList,
-      metaYears: metaYearList
+      ciclos: cicloList
     }));
   }, []);
   
   useEffect(() => {
     if (user && userProfile) {
-      saveUserData(user.id, userProfile, tasks, protocols, sprints, journals, moodHistory, metaYears);
+      saveUserData(user.id, userProfile, tasks, protocols, sprints, journals, moodHistory, ciclos);
     }
-  }, [user, userProfile, tasks, protocols, sprints, journals, moodHistory, metaYears, saveUserData]);
+  }, [user, userProfile, tasks, protocols, sprints, journals, moodHistory, ciclos, saveUserData]);
   
   const handleAuthSuccess = async (authUser) => {
     setUser(authUser);
@@ -4454,7 +4454,7 @@ export default function App() {
   const getPageTitle = () => {
     switch (currentPage) {
       case 'dashboard': return 'Dashboard';
-      case 'meta-year': return 'Meta Anual';
+      case 'ciclo': return 'Ciclo';
       case 'sprints': return 'Sprints';
       case 'journal': return 'Journal';
       case 'profile': return 'Profile';
@@ -4465,8 +4465,8 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard': return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} setSprints={setSprints} />;
-      case 'meta-year': return <MetaYearPage metaYears={metaYears} setMetaYears={setMetaYears} sprints={sprints} setSprints={setSprints} tasks={tasks} userProfile={userProfile} />;
-      case 'sprints': return <SprintsPage tasks={tasks} setTasks={setTasks} userProfile={userProfile} onUpdateTask={handleUpdateTask} sprints={sprints} setSprints={setSprints} metaYears={metaYears} />;
+      case 'ciclo': return <CicloPage ciclos={ciclos} setCiclos={setCiclos} sprints={sprints} setSprints={setSprints} tasks={tasks} userProfile={userProfile} />;
+      case 'sprints': return <SprintsPage tasks={tasks} setTasks={setTasks} userProfile={userProfile} onUpdateTask={handleUpdateTask} sprints={sprints} setSprints={setSprints} ciclos={ciclos} />;
       case 'journal': return <JournalPage journals={journals} setJournals={setJournals} userProfile={userProfile} />;
       case 'profile': return <ProfilePage user={user} userProfile={userProfile} setUserProfile={setUserProfile} />;
       default: return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} setSprints={setSprints} />;
