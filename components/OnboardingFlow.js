@@ -176,8 +176,21 @@ export default function OnboardingFlow({ user, onComplete }) {
 
           {step === 3 && (
             <div className="space-y-4 animate-in slide-in-from-right">
+              <div className="flex justify-between items-center">
+                  <Label>Human Design Type</Label>
+                  <Button variant="ghost" size="sm" onClick={handleCalculateHD} className="text-xs h-6">
+                    ⚡ Calcular via Astro-Engine
+                  </Button>
+              </div>
+
+              {calculatedHD && (
+                  <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-sm animate-in fade-in">
+                      <p className="font-bold text-indigo-400">Calculado: {calculatedHD.type} ({calculatedHD.profile})</p>
+                      <p className="text-xs text-muted-foreground">Estratégia: {calculatedHD.strategy}</p>
+                  </div>
+              )}
+
               <div className="space-y-2">
-                <Label>Human Design Type (Se souber)</Label>
                 <select 
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={formData.human_design_type}
@@ -189,9 +202,15 @@ export default function OnboardingFlow({ user, onComplete }) {
                   <option value="Manifestor">Manifestor</option>
                   <option value="Reflector">Reflector</option>
                 </select>
-                <p className="text-xs text-muted-foreground">
-                  Se não souber, calcularemos depois (mock por enquanto).
-                </p>
+              </div>
+
+              <div className="space-y-2">
+                 <Label>Perfil (Ex: 1/3)</Label>
+                 <Input 
+                    value={formData.human_design_profile || ''}
+                    onChange={(e) => setFormData({...formData, human_design_profile: e.target.value})}
+                    placeholder="Ex: 1/3, 4/6..."
+                 />
               </div>
 
               <Button className="w-full" onClick={handleSubmit} disabled={loading}>
