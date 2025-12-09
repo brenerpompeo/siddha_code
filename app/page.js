@@ -557,54 +557,6 @@ const MoodTracker = ({ todayMood, onSelectMood, moodHistory = [] }) => {
     </div>
   );
 };
-                })}
-              </div>
-              
-              {/* Weekly Overview */}
-              {moodHistory.length > 0 && (
-                <div className="border-t border-white/10 pt-3">
-                  <p className="text-xs text-white/50 mb-2">Últimos 7 dias</p>
-                  <div className="flex justify-between gap-1">
-                    {Array.from({ length: 7 }).map((_, i) => {
-                      const dayOffset = 6 - i;
-                      const date = new Date();
-                      date.setDate(date.getDate() - dayOffset);
-                      const dateStr = date.toISOString().split('T')[0];
-                      const dayMood = moodHistory.find(m => m.date === dateStr);
-                      const moodData = dayMood ? getMoodById(dayMood.mood) : null;
-                      const dayNames = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
-                      
-                      return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                          <span className="text-[10px] text-white/30">
-                            {dayNames[date.getDay()]}
-                          </span>
-                          <div 
-                            className={cn(
-                              'w-6 h-6 rounded-full flex items-center justify-center',
-                              moodData ? '' : 'bg-white/5'
-                            )}
-                            style={moodData ? { backgroundColor: `${moodData.color}30` } : {}}
-                          >
-                            {moodData ? (
-                              <moodData.icon className="w-3.5 h-3.5" style={{ color: moodData.color }} />
-                            ) : (
-                              <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
 
 // ============ NEW HEADER ============
 
