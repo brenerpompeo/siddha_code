@@ -4557,6 +4557,7 @@ export default function App() {
       case 'dashboard': return 'Dashboard';
       case 'ciclo': return 'Ciclo';
       case 'sprints': return 'Sprints';
+      case 'ikigai': return 'Astro-Ikigai';
       case 'journal': return 'Journal';
       case 'profile': return 'Profile';
       default: return 'Siddha Code';
