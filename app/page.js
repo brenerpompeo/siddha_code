@@ -4576,23 +4576,68 @@ export default function App() {
     }
   };
   
+  // Onboarding Logic
+  const showOnboarding = user && userProfile && (!userProfile.zodiac_sign);
+
   return (
-    <div className="min-h-screen bg-void">
-      <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} user={user} userProfile={userProfile} />
-      <div className="lg:ml-64">
-        <Header 
-          title={getPageTitle()} 
-          setIsMobileOpen={setIsMobileOpen} 
-          user={user} 
-          userProfile={userProfile} 
-          onSignOut={handleSignOut} 
-          onNavigate={setCurrentPage}
-          todayMood={todayMood}
-          onSelectMood={handleSelectMood}
-          moodHistory={moodHistory}
-        />
-        <main className="p-4 lg:p-8">{renderPage()}</main>
-      </div>
+    <div className="min-h-screen bg-void relative">
+      <StarsBackground className="fixed inset-0 z-0 pointer-events-none" />
+      
+      {showOnboarding ? (
+         <div className="relative z-50">
+           <OnboardingFlow 
+             user={user} 
+             onComplete={() => loadUserData(user)} 
+           />
+         </div>
+      ) : (
+        <div className="relative z-10">
+          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} user={user} userProfile={userProfile} />
+          <div className="lg:ml-64">
+            <Header 
+              title={getPageTitle()} 
+              setIsMobileOpen={setIsMobileOpen} 
+              user={user} 
+              userProfile={userProfile} 
+              onSignOut={handleSignOut} 
+              onNavigate={setCurrentPage}
+              todayMood={todayMood}
+              onSelectMood={handleSelectMood}
+              moodHistory={moodHistory}
+            />
+            <main className="p-4 lg:p-8">{renderPage()}</main>
+          </div>
+
+           <ExpandableChat
+              size="lg"
+              position="bottom-right"
+              icon={<Bot className="h-6 w-6" />}
+            >
+              <ExpandableChatHeader className="flex-col text-center justify-center">
+                <h1 className="text-xl font-semibold">Siddha AI ✨</h1>
+                <p className="text-sm text-muted-foreground">
+                  Seu guia para produtividade e autoconhecimento
+                </p>
+              </ExpandableChatHeader>
+              <ExpandableChatBody>
+                <ChatMessageList>
+                  <ChatBubble variant="received">
+                    <ChatBubbleAvatar fallback="AI" />
+                    <ChatBubbleMessage>Olá! Como posso ajudar você a alinhar sua produtividade com sua essência hoje?</ChatBubbleMessage>
+                  </ChatBubble>
+                </ChatMessageList>
+              </ExpandableChatBody>
+              <ExpandableChatFooter>
+                 <div className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1">
+                    <ChatInput placeholder="Digite sua dúvida..." />
+                    <div className="flex items-center p-3 pt-0 justify-between">
+                       <Button size="sm" className="ml-auto gap-1.5">Enviar <Send className="size-3.5" /></Button>
+                    </div>
+                 </div>
+              </ExpandableChatFooter>
+            </ExpandableChat>
+        </div>
+      )}
     </div>
   );
 }
