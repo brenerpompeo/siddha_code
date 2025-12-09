@@ -62,6 +62,15 @@ import {
   LineChart,
   Repeat
 } from 'lucide-react';
+import { Compass, Heart, DollarSign } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { StarsBackground } from '@/components/ui/stars-background';
+import { ExpandableChat, ExpandableChatHeader, ExpandableChatBody, ExpandableChatFooter } from '@/components/ui/expandable-chat';
+import { ChatMessageList } from '@/components/ui/chat-message-list';
+import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from '@/components/ui/chat-bubble';
+import { ChatInput } from '@/components/ui/chat-input';
+import IkigaiBuilder from '@/components/IkigaiBuilder';
+import OnboardingFlow from '@/components/OnboardingFlow';
 import { cn } from '@/lib/cn';
 import { PILLARS, getPillarByKey, getPillarColor } from '@/lib/constants/pillars';
 import { RANKS, getRankByXp, getNextRank, getRankProgress } from '@/lib/constants/ranks';
