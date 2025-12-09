@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Sparkles, ArrowRight, User, Calendar, MapPin } from 'lucide-react';
 
+import { calculateHumanDesign } from '@/lib/utils/humanDesign';
+
 export default function OnboardingFlow({ user, onComplete }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -16,12 +18,14 @@ export default function OnboardingFlow({ user, onComplete }) {
     birth_date: '',
     birth_time: '',
     birth_location: '',
-    human_design_type: 'Generator', // Default or selector
+    human_design_type: 'Generator',
+    human_design_profile: '1/3',
     zodiac_sign: '',
     zodiac_element: ''
   });
 
   const [zodiacFeedback, setZodiacFeedback] = useState(null);
+  const [calculatedHD, setCalculatedHD] = useState(null);
 
   // Watch birth_date for zodiac calculation
   useEffect(() => {
@@ -38,9 +42,22 @@ export default function OnboardingFlow({ user, onComplete }) {
     }
   }, [formData.birth_date]);
 
+  const handleCalculateHD = () => {
+      const hd = calculateHumanDesign(formData.birth_date, formData.birth_time, formData.birth_location);
+      if (hd) {
+          setFormData(prev => ({
+              ...prev,
+              human_design_type: hd.type,
+              human_design_profile: hd.profile
+          }));
+          setCalculatedHD(hd);
+      }
+  };
+
   const handleNext = () => {
     setStep(prev => prev + 1);
   };
+
 
   const handleSubmit = async () => {
     setLoading(true);
