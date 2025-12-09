@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, forwardRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, forwardRef, useRef } from 'react';
 import { 
   LayoutDashboard, 
   Kanban, 
@@ -18,6 +18,7 @@ import {
   Circle,
   ChevronRight,
   ChevronDown,
+  ChevronLeft,
   Sparkles,
   Target,
   Calendar,
@@ -44,13 +45,20 @@ import {
   Send,
   BarChart3,
   TrendingUp,
+  TrendingDown,
   Award,
   Star,
   Smile,
   Meh,
   Frown,
   SmilePlus,
-  Angry
+  Angry,
+  MessageCircle,
+  ArrowUp,
+  Activity,
+  PieChart,
+  LineChart,
+  Repeat
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { PILLARS, getPillarByKey, getPillarColor } from '@/lib/constants/pillars';
