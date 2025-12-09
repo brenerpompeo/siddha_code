@@ -76,7 +76,7 @@ export default function OnboardingFlow({ user, onComplete }) {
       onComplete();
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('Erro ao salvar perfil. Tente novamente.');
+      alert(`Erro ao salvar: ${error.message || JSON.stringify(error)}`);
     } finally {
       setLoading(false);
     }
