@@ -114,6 +114,7 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'ciclo', label: 'Ciclo', icon: Target },
   { id: 'sprints', label: 'Sprints', icon: Kanban },
+  { id: 'ikigai', label: 'Astro-Ikigai', icon: Compass },
   { id: 'journal', label: 'Journal', icon: BookOpen },
   { id: 'profile', label: 'Profile', icon: User },
 ];
