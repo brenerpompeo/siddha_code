@@ -1572,6 +1572,20 @@ const CicloPage = ({ ciclos, setCiclos, sprints, setSprints, tasks, userProfile 
               )}
           </div>
       )}
+      {/* Create Meta Year Modal */}
+      <CicloModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleCreateCiclo}
+      />
+      
+      {/* Edit Meta Year Modal */}
+      <CicloModal
+        isOpen={isEditModalOpen}
+        ciclo={cicloToEdit}
+        onClose={() => { setIsEditModalOpen(false); setCicloToEdit(null); }}
+        onSave={handleUpdateCiclo}
+      />
     </div>
   );
 };
