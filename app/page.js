@@ -846,7 +846,7 @@ const ProtocolsWidget = ({ protocols, onToggle, activeTab, setActiveTab }) => {
               onClick={() => onToggle(protocol.id)}
               className={cn(
                 'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
-                protocol.is_checked 
+                protocol.completed_today 
                   ? 'bg-primary/10 border border-primary/30'
                   : 'bg-white/[0.02] border border-white/5 hover:border-white/10'
               )}
