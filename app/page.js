@@ -1065,18 +1065,73 @@ const AuthPage = ({ onAuthSuccess }) => {
     }
   };
   
+  const handleOAuthLogin = async (provider) => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      if (error) throw error;
+      // Redirect happens automatically
+    } catch (err) {
+      setError(err.message || `Failed to sign in with ${provider}`);
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-void flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-void flex items-center justify-center p-4 relative overflow-hidden">
+      <StarsBackground className="absolute inset-0 z-0 pointer-events-none" />
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-pillar-spiritual flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-pillar-spiritual flex items-center justify-center mx-auto mb-4 animate-bounce">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">Siddha Code</h1>
-          <p className="text-white/50 mt-2">Life Operating System</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Siddha Code</h1>
+          <p className="text-white/50 mt-2">Sistema Operacional de Vida</p>
         </div>
         
-        <GlassCard className="p-8">
+        <GlassCard className="p-8 backdrop-blur-xl bg-white/[0.03] border-white/10">
+          {/* Social Logins */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <Button 
+                variant="outline" 
+                className="bg-white/5 border-white/10 hover:bg-white/10 text-white flex items-center justify-center gap-2"
+                onClick={() => handleOAuthLogin('google')}
+                disabled={loading}
+            >
+                <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
+                Google
+            </Button>
+             <Button 
+                variant="outline" 
+                className="bg-white/5 border-white/10 hover:bg-white/10 text-white flex items-center justify-center gap-2"
+                onClick={() => handleOAuthLogin('apple')}
+                disabled={loading}
+            >
+                <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M17.05,20.28c-0.98,0.97-2.05,1.72-3.13,1.72c-0.89,0-1.29-0.56-2.5-0.56c-1.25,0-1.63,0.56-2.54,0.56c-1.04,0-2.07-0.73-3.13-1.8c-2.31-2.32-2.31-6.79,0.92-10.03c1.37-1.37,3.22-1.72,4.35-1.72c1.17,0,1.86,0.52,2.52,0.52c0.61,0,1.63-0.52,2.83-0.52c1.07,0,2.46,0.44,3.48,1.48c-2.63,1.38-2.31,5.32,0.49,6.58C19.46,17.84,18.5,19.38,17.05,20.28L17.05,20.28z M15.22,4.86c0.52-0.69,0.94-1.63,0.94-2.48c0-0.12,0-0.24-0.01-0.36c-0.96,0.06-2.05,0.61-2.69,1.38c-0.49,0.57-0.91,1.52-0.91,2.37c0,0.11,0,0.22,0.01,0.32C13.59,6.23,14.65,5.61,15.22,4.86z"/></svg>
+                Apple
+            </Button>
+          </div>
+
+          <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-[#0f0f13] px-2 text-white/40">Ou continue com email</span>
+              </div>
+          </div>
+
           <div className="flex mb-6 bg-white/5 rounded-lg p-1">
             <button
               onClick={() => { setMode('signin'); setError(''); setMessage(''); }}
