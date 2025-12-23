@@ -2342,6 +2342,16 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
         sprint={sprintToEdit}
         onClose={() => {
           setIsEditSprintModalOpen(false);
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        isOpen={!!selectedTask}
+        task={selectedTask}
+        onClose={() => setSelectedTask(null)}
+        onUpdate={(updatedTask) => {
+            setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+            if (onUpdateTask) onUpdateTask(updatedTask);
+        }}
+      />
           setSprintToEdit(null);
         }}
         onSave={handleUpdateSprint}
