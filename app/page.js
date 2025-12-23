@@ -4156,6 +4156,9 @@ const ProfilePage = ({ user, userProfile, setUserProfile, onEditProfile }) => {
             <h2 className="text-xl font-bold text-white">{displayName}</h2>
             <p className="text-white/50 text-sm">{user?.email}</p>
             <Badge color={currentRank.color} className="mt-2">{currentRank.title}</Badge>
+            <Button variant="outline" size="sm" className="mt-2 text-xs border-white/10" onClick={onEditProfile}>
+                Editar Perfil
+            </Button>
             
             <div className="grid grid-cols-2 gap-4 mt-6">
               <div className="p-3 rounded-lg bg-white/[0.02]">
