@@ -4641,6 +4641,7 @@ export default function App() {
             </ExpandableChat>
         </div>
       )}
+      <Toaster position="top-right" theme="dark" />
     </div>
   );
 }
