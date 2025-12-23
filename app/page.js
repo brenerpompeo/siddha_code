@@ -4375,10 +4375,7 @@ export default function App() {
         setIsChatLoading(false);
     }
   };
-        timestamp: new Date().toISOString()
-      }];
-    });
-  };
+
   // Handle mood selection with toast
   const handleSelectMoodWithToast = (moodId) => {
     handleSelectMood(moodId);
