@@ -4608,13 +4608,6 @@ export default function App() {
               userProfile={userProfile} 
               onSignOut={handleSignOut} 
               onNavigate={setCurrentPage}
-            <EditProfileModal
-                user={user}
-                userProfile={userProfile}
-                isOpen={isEditProfileOpen}
-                onClose={() => setIsEditProfileOpen(false)}
-                onUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
-            />
               todayMood={todayMood}
               onSelectMood={handleSelectMood}
               moodHistory={moodHistory}
