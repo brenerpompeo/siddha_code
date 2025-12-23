@@ -4643,6 +4643,14 @@ export default function App() {
                  </div>
               </ExpandableChatFooter>
             </ExpandableChat>
+      {/* Modals outside main layout */}
+      <EditProfileModal
+          user={user}
+          userProfile={userProfile}
+          isOpen={isEditProfileOpen}
+          onClose={() => setIsEditProfileOpen(false)}
+          onUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
+      />
         </div>
       )}
       <Toaster position="top-right" theme="dark" />
