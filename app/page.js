@@ -4625,15 +4625,27 @@ export default function App() {
     setUserProfile(null);
   };
   
-  const handleToggleProtocol = (protocolId) => {
-    setProtocols(prev => {
-      const updated = prev.map(p => p.id === protocolId ? { ...p, is_checked: !p.is_checked } : p);
-      const protocol = prev.find(p => p.id === protocolId);
-      if (protocol && !protocol.is_checked) {
-        setUserProfile(profile => ({ ...profile, xp: (profile?.xp || 0) + XP_REWARDS.protocol_complete }));
-      }
-      return updated;
-    });
+  const handleToggleProtocol = async (protocolId) => {
+    // Optimistic update
+    const protocol = protocols.find(p => p.id === protocolId);
+    const newStatus = !protocol.completed_today;
+    
+    setProtocols(prev => prev.map(p => 
+      p.id === protocolId ? { ...p, completed_today: newStatus } : p
+    ));
+
+    try {
+        await supabase
+            .from('protocols')
+            .update({ completed_today: newStatus })
+            .eq('id', protocolId);
+    } catch (error) {
+        console.error('Error toggling protocol:', error);
+        // Revert on error
+        setProtocols(prev => prev.map(p => 
+            p.id === protocolId ? { ...p, completed_today: !newStatus } : p
+        ));
+    }
   };
   
   const handleUpdateTask = (updatedTask) => {
