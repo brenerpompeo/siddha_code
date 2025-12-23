@@ -76,6 +76,7 @@ import DreamBoard from '@/components/DreamBoard';
 import ProtocolManager from '@/components/ProtocolManager';
 import { PillarRadarChart, ProductivityBarChart, SubPillarPieChart } from '@/components/AnalyticsCharts';
 import { ActiveSprintWidget, ActiveCicloWidget, MiniJournalWidget } from '@/components/DashboardWidgets';
+import TaskDetailModal from '@/components/TaskDetailModal';
 import { PILLARS, getPillarByKey, getPillarColor } from '@/lib/constants/pillars';
 import { RANKS, getRankByXp, getNextRank, getRankProgress } from '@/lib/constants/ranks';
 import { KANBAN_COLUMNS, GUT_CHECK_PROMPTS, XP_REWARDS, getColumnById } from '@/lib/constants/kanban';
