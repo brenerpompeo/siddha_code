@@ -2151,6 +2151,7 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
     }
     setIsEditSprintModalOpen(false);
     setSprintToEdit(null);
+  const [selectedTask, setSelectedTask] = useState(null); // For Task Detail Modal
   };
   
   // Delete Sprint
