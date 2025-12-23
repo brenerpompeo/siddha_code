@@ -1258,26 +1258,7 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
       />
     </div>
   );
-                  <h3 className="text-sm font-bold text-white mb-4">Distribuição de Foco</h3>
-                  <SubPillarPieChart tasks={tasks} />
-              </GlassCard>
-          </div>
-      )}
-
-      {/* Main Command Center Grid (Bento Layout) */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        
-        {/* Left Column: Sprint & Ciclo Context (4 cols) */}
-        <div className="md:col-span-4 space-y-6">
-            <div className="h-48">
-                <ActiveSprintWidget sprint={activeSprint} tasks={tasks} onClick={() => setPage('sprints')} />
-            </div>
-            <div>
-                <MiniJournalWidget latestEntry={null} onClick={() => setPage('journal')} />
-            </div>
-        </div>
-
-        {/* Center Column: Protocols (4 cols) */}
+};
         <div className="md:col-span-4 h-full">
             <div className="relative h-full">
                 <ProtocolsWidget 
