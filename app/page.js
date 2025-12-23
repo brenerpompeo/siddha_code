@@ -1392,6 +1392,14 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
         onCreateSprint={handleCreateSprint}
         userProfile={userProfile}
       />
+
+      <ProtocolManager 
+        protocols={protocols}
+        setProtocols={setProtocols}
+        user={user}
+        isOpen={isProtocolManagerOpen}
+        onClose={() => setIsProtocolManagerOpen(false)}
+      />
     </div>
   );
 };
