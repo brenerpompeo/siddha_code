@@ -4568,6 +4568,25 @@ export default function App() {
       const { data: fetchedJournals } = await supabase.from('journal_entries').select('*').eq('user_id', authUser.id);
       setJournals(fetchedJournals || []);
 
+      // 6. Fetch Protocols
+      const { data: fetchedProtocols } = await supabase.from('protocols').select('*').eq('user_id', authUser.id);
+      
+      if (!fetchedProtocols || fetchedProtocols.length === 0) {
+          // If no protocols, use default and save to DB
+          const defaultProtocolsData = DEFAULT_PROTOCOLS.map(p => ({
+              user_id: authUser.id,
+              title: p.title,
+              type: 'daily', // Defaulting for migration
+              time: p.time,
+              completed_today: false
+          }));
+          
+          const { data: createdProtocols } = await supabase.from('protocols').insert(defaultProtocolsData).select();
+          setProtocols(createdProtocols || []);
+      } else {
+          setProtocols(fetchedProtocols);
+      }
+
     } catch (error) {
       console.error('Critical error loading user data:', error);
       // Fallback?
