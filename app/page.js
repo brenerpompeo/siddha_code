@@ -4318,6 +4318,7 @@ export default function App() {
   const [moodHistory, setMoodHistory] = useState([]);
   const [ciclos, setCiclos] = useState([]);
   
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const supabase = createClient();
   
   // Get today's date string
