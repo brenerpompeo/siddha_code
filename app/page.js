@@ -4575,10 +4575,9 @@ export default function App() {
           // If no protocols, use default and save to DB
           const defaultProtocolsData = DEFAULT_PROTOCOLS.map(p => ({
               user_id: authUser.id,
-              title: p.title,
-              type: 'daily', // Defaulting for migration
-              time: p.time,
-              completed_today: false
+              name: p.name,
+              frequency: p.frequency,
+              is_checked: false
           }));
           
           const { data: createdProtocols } = await supabase.from('protocols').insert(defaultProtocolsData).select();
