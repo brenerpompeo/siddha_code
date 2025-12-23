@@ -4577,7 +4577,7 @@ export default function App() {
               user_id: authUser.id,
               name: p.name,
               frequency: p.frequency,
-              is_checked: false
+              completed_today: false
           }));
           
           const { data: createdProtocols } = await supabase.from('protocols').insert(defaultProtocolsData).select();
