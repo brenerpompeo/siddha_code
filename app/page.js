@@ -2230,6 +2230,7 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
           onEdit={handleEditSprint}
           onDelete={handleDeleteSprint}
           tasksCount={selectedSprintTasksCount}
+          onTaskClick={setSelectedTask}
         />
       )}
       
