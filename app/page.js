@@ -1329,10 +1329,7 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
       <SprintBuilder
         isOpen={isSprintBuilderOpen}
         onClose={() => setIsSprintBuilderOpen(false)}
-        onCreateSprint={(data) => {
-            // Logic handled in parent or we need to pass the handleCreateSprint from parent
-            // Ideally DashboardPage receives handleCreateSprint
-        }} 
+        onCreateSprint={setSprints} // Temporary fix to prevent error, will be fixed in next step by passing correct handler
         userProfile={userProfile}
       />
 
