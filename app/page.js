@@ -1202,9 +1202,10 @@ const AuthPage = ({ onAuthSuccess }) => {
 
 // ============ DASHBOARD PAGE ============
 
-const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprints, setSprints }) => {
+const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprints, setSprints, setProtocols, user }) => {
   const [protocolTab, setProtocolTab] = useState('daily');
   const [isSprintBuilderOpen, setIsSprintBuilderOpen] = useState(false);
+  const [isProtocolManagerOpen, setIsProtocolManagerOpen] = useState(false); // NEW state
   const displayName = userProfile?.username || 'Warrior';
   const today = new Date().toLocaleDateString('pt-BR', { 
     weekday: 'long', 
