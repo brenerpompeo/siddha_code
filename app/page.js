@@ -4339,6 +4339,42 @@ export default function App() {
         date: today, 
         mood: moodId, 
         sprintId: activeSprint?.id || null,
+  // Chat state
+  const [chatMessages, setChatMessages] = useState([
+    { id: 1, role: 'system', content: 'Olá! Como posso ajudar você a alinhar sua produtividade com sua essência hoje?' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+    
+    const userMsg = { id: Date.now(), role: 'user', content: chatInput };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+        const response = await fetch('/api/suggestions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'chat', data: { message: userMsg.content } })
+        });
+        const result = await response.json();
+        
+        const aiMsg = { 
+            id: Date.now() + 1, 
+            role: 'assistant', 
+            content: result.reply || "Desculpe, estou meditando agora. Tente novamente."
+        };
+        setChatMessages(prev => [...prev, aiMsg]);
+    } catch (error) {
+        console.error('Chat error:', error);
+        toast.error('Erro ao conectar com Siddha AI');
+    } finally {
+        setIsChatLoading(false);
+    }
+  };
         timestamp: new Date().toISOString()
       }];
     });
