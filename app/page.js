@@ -4125,7 +4125,7 @@ const JournalPage = ({ journals, setJournals, userProfile }) => {
 
 // ============ PROFILE PAGE ============
 
-const ProfilePage = ({ user, userProfile, setUserProfile }) => {
+const ProfilePage = ({ user, userProfile, setUserProfile, onEditProfile }) => {
   const currentRank = getRankByXp(userProfile?.xp || 0);
   const displayName = userProfile?.username || user?.email?.split('@')[0] || 'User';
   const hdType = getHDTypeByKey(userProfile?.hd_type);
