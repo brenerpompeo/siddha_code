@@ -1389,9 +1389,8 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
 
 const CicloPage = ({ ciclos, setCiclos, sprints, setSprints, tasks, userProfile }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [cicloToEdit, setCicloToEdit] = useState(null);
   const [selectedYear, setSelectedYear] = useState(null);
+  const [activeTab, setActiveTab] = useState('vision'); // 'vision' (Dream Board) or 'timeline' (Time Machine)
   
   const currentYear = new Date().getFullYear();
   const activeCiclo = ciclos.find(m => m.status === 'active') || ciclos[0];
@@ -1406,51 +1405,98 @@ const CicloPage = ({ ciclos, setCiclos, sprints, setSprints, tasks, userProfile 
   // Get sprints for selected meta year
   const yearSprints = useMemo(() => {
     if (!selectedYear) return [];
-    return sprints.filter(s => s.cicloId === selectedYear.id || 
+    return sprints.filter(s => s.meta_year_id === selectedYear.id || 
       (new Date(s.created_at).getFullYear() === selectedYear.year));
   }, [sprints, selectedYear]);
-  
-  // Stats
-  const stats = useMemo(() => {
-    const activeSprints = yearSprints.filter(s => s.status === 'active').length;
-    const completedSprints = yearSprints.filter(s => s.status === 'completed').length;
-    const totalGoals = yearSprints.reduce((acc, s) => acc + (s.goals?.length || 0), 0);
-    const completedTasks = tasks.filter(t => 
-      yearSprints.some(s => s.id === t.sprintId) && t.status === 'wisdom'
-    ).length;
-    return { activeSprints, completedSprints, totalGoals, completedTasks };
-  }, [yearSprints, tasks]);
-  
-  const handleCreateCiclo = (data) => {
-    const newCiclo = {
-      id: uuidv4(),
-      ...data,
-      status: 'active',
-      created_at: new Date().toISOString()
-    };
-    // Set other years to inactive if this is active
-    setCiclos(prev => prev.map(m => ({ ...m, status: 'completed' })).concat(newCiclo));
-    setSelectedYear(newCiclo);
-    setIsCreateModalOpen(false);
-  };
-  
-  const handleUpdateCiclo = (data) => {
-    setCiclos(prev => prev.map(m => 
-      m.id === data.id ? { ...m, ...data } : m
-    ));
-    if (selectedYear?.id === data.id) {
-      setSelectedYear(prev => prev ? { ...prev, ...data } : null);
-    }
-    setIsEditModalOpen(false);
-    setCicloToEdit(null);
-  };
-  
-  const handleDeleteCiclo = (id) => {
-    setCiclos(prev => prev.filter(m => m.id !== id));
-    if (selectedYear?.id === id) {
-      setSelectedYear(ciclos.find(m => m.id !== id) || null);
-    }
-  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
+            {selectedYear?.theme || `Ciclo ${currentYear}`}
+          </h1>
+          <p className="text-white/50 italic">"{selectedYear?.intention || 'Defina sua intenção anual'}"</p>
+        </div>
+        <div className="flex bg-white/5 p-1 rounded-lg">
+            <button 
+                onClick={() => setActiveTab('vision')}
+                className={cn("px-4 py-2 rounded-md text-sm transition-all", activeTab === 'vision' ? "bg-primary text-white" : "text-white/60 hover:text-white")}
+            >
+                Quadro dos Sonhos
+            </button>
+            <button 
+                onClick={() => setActiveTab('timeline')}
+                className={cn("px-4 py-2 rounded-md text-sm transition-all", activeTab === 'timeline' ? "bg-primary text-white" : "text-white/60 hover:text-white")}
+            >
+                Máquina do Tempo
+            </button>
+        </div>
+      </div>
+
+      {activeTab === 'vision' && selectedYear && (
+          <DreamBoard cicloId={selectedYear.id} />
+      )}
+
+      {activeTab === 'timeline' && (
+          <div className="space-y-8 relative pl-8 border-l border-white/10 ml-4">
+              {yearSprints.length === 0 ? (
+                  <p className="text-white/40 italic">Nenhum sprint registrado neste ciclo ainda.</p>
+              ) : (
+                  yearSprints
+                    .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
+                    .map((sprint, index) => (
+                      <div key={sprint.id} className="relative group">
+                          {/* Timeline Dot */}
+                          <div className={cn(
+                              "absolute -left-[41px] top-4 w-5 h-5 rounded-full border-4 border-void",
+                              sprint.status === 'active' ? "bg-primary" : "bg-white/20"
+                          )} />
+                          
+                          <GlassCard className="p-6 transition-all hover:bg-white/[0.05]">
+                              <div className="flex justify-between items-start mb-4">
+                                  <div>
+                                      <div className="flex items-center gap-2 mb-1">
+                                          <h3 className="text-xl font-bold text-white">{sprint.title}</h3>
+                                          <Badge className={cn(
+                                              sprint.status === 'active' ? 'bg-primary/20 text-primary' : 'bg-white/10 text-white/50'
+                                          )}>
+                                              {sprint.status === 'active' ? 'Em Progresso' : 'Concluído'}
+                                          </Badge>
+                                      </div>
+                                      <p className="text-sm text-white/50 flex items-center gap-2">
+                                          <Calendar className="w-3 h-3" />
+                                          {new Date(sprint.start_date).toLocaleDateString()} - {new Date(sprint.end_date).toLocaleDateString()}
+                                      </p>
+                                  </div>
+                                  <div className="text-right">
+                                      <div className="text-2xl font-bold text-white">
+                                          {tasks.filter(t => t.sprintId === sprint.id && t.status === 'wisdom').length}
+                                          <span className="text-sm text-white/30 font-normal">/{tasks.filter(t => t.sprintId === sprint.id).length} tarefas</span>
+                                      </div>
+                                  </div>
+                              </div>
+                              
+                              <p className="text-white/80 mb-4 italic border-l-2 border-primary/30 pl-3">
+                                  "{sprint.intention}"
+                              </p>
+
+                              <div className="flex gap-2 flex-wrap">
+                                  {sprint.goals?.map((goal, i) => (
+                                      <span key={i} className="text-xs px-2 py-1 rounded bg-white/5 text-white/60">
+                                          {goal}
+                                      </span>
+                                  ))}
+                              </div>
+                          </GlassCard>
+                      </div>
+                  ))
+              )}
+          </div>
+      )}
+    </div>
+  );
+};
   
   return (
     <div className="space-y-6">
