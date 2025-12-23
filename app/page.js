@@ -1161,13 +1161,65 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
   const activeTasks = tasks.filter(t => t.status !== 'wisdom').length;
   const activeSprints = sprints.filter(s => s.status === 'active').length;
   
-  const handleCreateSprint = (sprint) => {
-    setSprints(prev => [...prev, { 
-      ...sprint, 
-      id: uuidv4(), 
-      status: 'active', 
-      created_at: new Date().toISOString() 
-    }]);
+  const handleCreateSprint = async (sprintData) => {
+      try {
+          const currentYear = new Date().getFullYear();
+          const currentCiclo = ciclos.find(c => c.year === currentYear);
+          
+          // 1. Create Sprint in DB
+          const newSprint = {
+              user_id: user.id,
+              meta_year_id: currentCiclo?.id || null,
+              title: sprintData.title,
+              intention: sprintData.intention,
+              archetype: sprintData.archetype,
+              start_date: new Date().toISOString(),
+              end_date: new Date(Date.now() + (sprintData.duration * 24 * 60 * 60 * 1000)).toISOString(),
+              status: 'active',
+              goals: sprintData.goals || [],
+              commitments: sprintData.dailyCommitments || []
+          };
+
+          const { data: createdSprint, error: sprintError } = await supabase
+              .from('sprints')
+              .insert(newSprint)
+              .select()
+              .single();
+
+          if (sprintError) throw sprintError;
+
+          // 2. Create Tasks from Goals (Auto-generate)
+          if (sprintData.goals && sprintData.goals.length > 0) {
+              const tasksToCreate = sprintData.goals.map(goal => ({
+                  user_id: user.id,
+                  sprint_id: createdSprint.id,
+                  title: goal,
+                  description: 'Meta convertida automaticamente em tarefa.',
+                  status: 'todo',
+                  pillar: sprintData.focusPillars?.[0] || 'physical', // Default first pillar
+                  created_at: new Date().toISOString()
+              }));
+
+              const { data: createdTasks, error: taskError } = await supabase
+                  .from('tasks')
+                  .insert(tasksToCreate)
+                  .select();
+                  
+              if (taskError) console.error('Error auto-creating tasks:', taskError);
+              
+              if (createdTasks) {
+                  setTasks(prev => [...prev, ...createdTasks]);
+              }
+          }
+
+          // 3. Update Local State
+          setSprints(prev => [...prev, createdSprint]);
+          alert('Sprint criado com sucesso!');
+
+      } catch (error) {
+          console.error('Error creating sprint:', error);
+          alert('Erro ao criar sprint.');
+      }
   };
   
   return (
