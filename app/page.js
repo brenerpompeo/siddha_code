@@ -3130,7 +3130,7 @@ const SprintBuilder = ({ isOpen, onClose, onCreateSprint, userProfile }) => {
     }
   };
   
-  const handleCreateSprint = () => {
+  const handleCreateSprintSubmit = () => {
     onCreateSprint({
       title: sprintData.title.trim(),
       intention: sprintData.intention.trim(),
