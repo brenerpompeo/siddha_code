@@ -1410,6 +1410,65 @@ const CicloPage = ({ ciclos, setCiclos, sprints, setSprints, tasks, userProfile 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState(null);
   const [activeTab, setActiveTab] = useState('vision'); // 'vision' (Dream Board) or 'timeline' (Time Machine)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [cicloToEdit, setCicloToEdit] = useState(null);
+
+  const handleCreateCiclo = async (data) => {
+    try {
+      const newCiclo = {
+        user_id: userProfile.id,
+        year: parseInt(data.year),
+        theme: data.theme,
+        intention: data.intention,
+        status: 'active'
+      };
+      
+      const { data: created, error } = await supabase.from('meta_years').insert(newCiclo).select().single();
+      if (error) throw error;
+      
+      setCiclos(prev => [...prev, created]);
+      setSelectedYear(created);
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error('Error creating ciclo:', error);
+      alert('Erro ao criar ciclo');
+    }
+  };
+
+  const handleUpdateCiclo = async (data) => {
+    try {
+      const { error } = await supabase
+        .from('meta_years')
+        .update({ theme: data.theme, intention: data.intention, year: data.year })
+        .eq('id', data.id);
+        
+      if (error) throw error;
+      
+      setCiclos(prev => prev.map(m => m.id === data.id ? { ...m, ...data } : m));
+      if (selectedYear?.id === data.id) {
+        setSelectedYear(prev => ({ ...prev, ...data }));
+      }
+      setIsEditModalOpen(false);
+      setCicloToEdit(null);
+    } catch (error) {
+      console.error('Error updating ciclo:', error);
+    }
+  };
+
+  const handleDeleteCiclo = async (id) => {
+    if(!confirm('Tem certeza? Isso pode afetar sprints vinculados.')) return;
+    try {
+      const { error } = await supabase.from('meta_years').delete().eq('id', id);
+      if (error) throw error;
+      
+      setCiclos(prev => prev.filter(m => m.id !== id));
+      if (selectedYear?.id === id) {
+        setSelectedYear(null);
+      }
+    } catch (error) {
+      console.error('Error deleting ciclo:', error);
+    }
+  };
   
   const currentYear = new Date().getFullYear();
   const activeCiclo = ciclos.find(m => m.status === 'active') || ciclos[0];
