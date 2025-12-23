@@ -1355,12 +1355,22 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column */}
         <div className="space-y-6">
-          <ProtocolsWidget 
-            protocols={protocols} 
-            onToggle={onToggleProtocol} 
-            activeTab={protocolTab}
-            setActiveTab={setProtocolTab}
-          />
+          <div className="relative">
+            <ProtocolsWidget 
+              protocols={protocols} 
+              onToggle={onToggleProtocol} 
+              activeTab={protocolTab}
+              setActiveTab={setProtocolTab}
+            />
+            <button 
+              onClick={() => setIsProtocolManagerOpen(true)}
+              className="absolute top-6 right-6 p-1 text-white/30 hover:text-white hover:bg-white/10 rounded transition-all"
+              title="Gerenciar Protocolos"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
+          
           <SprintsOverviewWidget 
             sprints={sprints} 
             onViewSprint={() => {}} 
