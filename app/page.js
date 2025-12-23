@@ -4339,6 +4339,11 @@ export default function App() {
         date: today, 
         mood: moodId, 
         sprintId: activeSprint?.id || null,
+        timestamp: new Date().toISOString()
+      }];
+    });
+  };
+
   // Chat state
   const [chatMessages, setChatMessages] = useState([
     { id: 1, role: 'system', content: 'Olá! Como posso ajudar você a alinhar sua produtividade com sua essência hoje?' }
