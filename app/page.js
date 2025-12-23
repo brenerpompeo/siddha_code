@@ -4339,6 +4339,11 @@ export default function App() {
       }];
     });
   };
+  // Handle mood selection with toast
+  const handleSelectMoodWithToast = (moodId) => {
+    handleSelectMood(moodId);
+    toast.success('Humor registrado com sucesso!');
+  };
   
   useEffect(() => {
     const checkAuth = async () => {
