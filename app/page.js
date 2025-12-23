@@ -1240,7 +1240,7 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4">
               <GlassCard className="p-4 col-span-1">
                   <h3 className="text-sm font-bold text-white mb-4">Progresso dos 7 Pilares</h3>
-                  <PillarRadarChart tasks={tasks} />
+                  <PillarRadarChart userProfile={userProfile} tasks={tasks} />
               </GlassCard>
               <GlassCard className="p-4 col-span-1">
                   <h3 className="text-sm font-bold text-white mb-4">Produtividade (Sprints)</h3>
