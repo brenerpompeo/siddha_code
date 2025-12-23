@@ -1242,8 +1242,9 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
         isOpen={isSprintBuilderOpen}
         onClose={() => setIsSprintBuilderOpen(false)}
         onCreateSprint={(data) => {
-            // Logic handled in parent or we need to pass the handleCreateSprint from parent
-            // Ideally DashboardPage receives handleCreateSprint
+            // TODO: Handle sprint creation - this should be passed from parent component
+            console.log('Sprint creation:', data);
+            setIsSprintBuilderOpen(false);
         }} 
         userProfile={userProfile}
       />
