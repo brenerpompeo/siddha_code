@@ -3130,8 +3130,9 @@ const SprintBuilder = ({ isOpen, onClose, onCreateSprint, userProfile }) => {
     }
   };
   
-  const handleCreateSprintSubmit = () => {
-    onCreateSprint({
+  const handleCreateSprintSubmit = async () => {
+    // Pass raw data, parent component will handle formatting and saving
+    await onCreateSprint({
       title: sprintData.title.trim(),
       intention: sprintData.intention.trim(),
       archetype: sprintData.archetype,
@@ -3139,9 +3140,7 @@ const SprintBuilder = ({ isOpen, onClose, onCreateSprint, userProfile }) => {
       duration: sprintData.duration,
       goals: sprintData.goals,
       dailyCommitments: sprintData.dailyCommitments,
-      alignmentScore: sprintData.alignmentScore,
-      tasks_count: 0,
-      mood_log: []
+      alignmentScore: sprintData.alignmentScore
     });
     
     // Reset state
