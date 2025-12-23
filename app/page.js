@@ -4408,14 +4408,14 @@ const ProfilePage = ({ user, userProfile, setUserProfile }) => {
 // ============ MAIN APP ============
 
 const DEFAULT_PROTOCOLS = [
-  { id: uuidv4(), name: 'Rotina Matinal', is_checked: false, frequency: 'daily' },
-  { id: uuidv4(), name: 'Hidratação (8 copos)', is_checked: false, frequency: 'daily' },
-  { id: uuidv4(), name: 'Meditação', is_checked: false, frequency: 'daily' },
-  { id: uuidv4(), name: 'Exercício', is_checked: false, frequency: 'daily' },
-  { id: uuidv4(), name: 'Tempo de Aprendizado', is_checked: false, frequency: 'daily' },
-  { id: uuidv4(), name: 'Revisão Semanal', is_checked: false, frequency: 'weekly' },
-  { id: uuidv4(), name: 'Planejamento de Sprint', is_checked: false, frequency: 'weekly' },
-  { id: uuidv4(), name: 'Review Mensal', is_checked: false, frequency: 'monthly' },
+  { id: uuidv4(), name: 'Rotina Matinal', completed_today: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Hidratação (8 copos)', completed_today: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Meditação', completed_today: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Exercício', completed_today: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Tempo de Aprendizado', completed_today: false, frequency: 'daily' },
+  { id: uuidv4(), name: 'Revisão Semanal', completed_today: false, frequency: 'weekly' },
+  { id: uuidv4(), name: 'Planejamento de Sprint', completed_today: false, frequency: 'weekly' },
+  { id: uuidv4(), name: 'Review Mensal', completed_today: false, frequency: 'monthly' },
 ];
 
 const DEFAULT_TASKS = [
