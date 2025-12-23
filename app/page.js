@@ -4578,7 +4578,7 @@ export default function App() {
       case 'sprints': return <SprintsPage tasks={tasks} setTasks={setTasks} userProfile={userProfile} onUpdateTask={handleUpdateTask} sprints={sprints} setSprints={setSprints} ciclos={ciclos} />;
       case 'ikigai': return <IkigaiBuilder userProfile={userProfile} />;
       case 'journal': return <JournalPage journals={journals} setJournals={setJournals} userProfile={userProfile} />;
-      case 'profile': return <ProfilePage user={user} userProfile={userProfile} setUserProfile={setUserProfile} />;
+      case 'profile': return <ProfilePage user={user} userProfile={userProfile} setUserProfile={setUserProfile} onEditProfile={() => setIsEditProfileOpen(true)} />;
       default: return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} setSprints={setSprints} />;
     }
   };
