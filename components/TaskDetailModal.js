@@ -4,8 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'; // Assuming shadcn dialog exists or use generic modal style
-import { X, Calendar, Flag, Tag, Save, CheckCircle2, Circle } from 'lucide-react';
+import { X, Calendar, Save } from 'lucide-react';
 import { PILLARS, getPillarByKey } from '@/lib/constants/pillars';
 import { SUB_PILLARS } from '@/lib/constants/sub-pillars';
 
@@ -67,7 +66,6 @@ export default function TaskDetailModal({ task, isOpen, onClose, onUpdate }) {
   };
 
   const renderDynamicInputs = () => {
-    // Logic to render specific inputs based on pillar/sub-pillar
     const pillar = formData.pillar;
     
     // Example: Physical Inputs
@@ -152,6 +150,9 @@ export default function TaskDetailModal({ task, isOpen, onClose, onUpdate }) {
 
   if (!isOpen || !task) return null;
 
+  // Get Sub-pillars for current pillar
+  const currentSubPillars = SUB_PILLARS.filter(sp => sp.pillar === formData.pillar);
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-[#0f0f12] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -163,8 +164,23 @@ export default function TaskDetailModal({ task, isOpen, onClose, onUpdate }) {
                 <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider text-white bg-${getPillarByKey(formData.pillar)?.color.split('-')[1]}-500/20`}>
                     {getPillarByKey(formData.pillar)?.label || formData.pillar}
                 </span>
+                
+                {/* Sub-Pillar Dropdown */}
+                {currentSubPillars.length > 0 && (
+                    <select
+                        className="bg-white/5 text-xs text-white/70 border border-white/10 rounded px-2 py-0.5 outline-none focus:ring-0 cursor-pointer"
+                        value={formData.sub_pillar}
+                        onChange={e => setFormData({...formData, sub_pillar: e.target.value})}
+                    >
+                        <option value="">Sem categoria</option>
+                        {currentSubPillars.map(sp => (
+                            <option key={sp.key} value={sp.key}>{sp.label}</option>
+                        ))}
+                    </select>
+                )}
+
                 <select 
-                    className="bg-transparent text-xs text-white/50 border-none outline-none focus:ring-0 cursor-pointer"
+                    className="bg-transparent text-xs text-white/50 border-none outline-none focus:ring-0 cursor-pointer ml-auto"
                     value={formData.priority}
                     onChange={e => setFormData({...formData, priority: e.target.value})}
                 >
