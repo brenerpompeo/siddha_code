@@ -2967,7 +2967,7 @@ const SprintBuilder = ({ isOpen, onClose, onCreateSprint, userProfile }) => {
   
   const handleNext = () => {
     if (currentStep === GATEKEEPER_STEPS.length - 1) {
-      handleCreateSprint();
+      handleCreateSprintSubmit();
     } else {
       setCurrentStep(prev => prev + 1);
       // Auto-fetch suggestions for next step
