@@ -851,7 +851,7 @@ const ProtocolsWidget = ({ protocols, onToggle, activeTab, setActiveTab }) => {
                   : 'bg-white/[0.02] border border-white/5 hover:border-white/10'
               )}
             >
-              {protocol.is_checked ? (
+              {protocol.completed_today ? (
                 <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
               ) : (
                 <Circle className="w-5 h-5 text-white/30 flex-shrink-0" />
