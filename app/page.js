@@ -2161,8 +2161,6 @@ const SprintsPage = ({ tasks, setTasks, userProfile, onUpdateTask, sprints, setS
     // Unlink tasks from this sprint (don't delete them)
     setTasks(prev => prev.map(t => 
       t.sprintId === sprintId ? { ...t, sprintId: null } : t
- // remove line
- // fixed typo
     ));
     
     // Clear selection if deleted sprint was selected
