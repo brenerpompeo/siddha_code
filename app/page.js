@@ -1258,6 +1258,94 @@ const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprint
       />
     </div>
   );
+                  <h3 className="text-sm font-bold text-white mb-4">Distribuição de Foco</h3>
+                  <SubPillarPieChart tasks={tasks} />
+              </GlassCard>
+          </div>
+      )}
+
+      {/* Main Command Center Grid (Bento Layout) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        
+        {/* Left Column: Sprint & Ciclo Context (4 cols) */}
+        <div className="md:col-span-4 space-y-6">
+            <div className="h-48">
+                <ActiveSprintWidget sprint={activeSprint} tasks={tasks} onClick={() => setPage('sprints')} />
+            </div>
+            <div>
+                <MiniJournalWidget latestEntry={null} onClick={() => setPage('journal')} />
+            </div>
+        </div>
+
+        {/* Center Column: Protocols (4 cols) */}
+        <div className="md:col-span-4 h-full">
+            <div className="relative h-full">
+                <ProtocolsWidget 
+                  protocols={protocols} 
+                  onToggle={onToggleProtocol} 
+                  activeTab={protocolTab}
+                  setActiveTab={setProtocolTab}
+                />
+                <button 
+                  onClick={() => setIsProtocolManagerOpen(true)}
+                  className="absolute top-4 right-4 p-2 text-white/30 hover:text-white hover:bg-white/10 rounded transition-all"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+
+        {/* Right Column: Stats & Quick Actions (4 cols) */}
+        <div className="md:col-span-4 space-y-4">
+             <div className="grid grid-cols-2 gap-4">
+                <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
+                    <Zap className="w-6 h-6 text-yellow-400 mb-2" />
+                    <span className="text-2xl font-bold text-white">{userProfile?.xp || 0}</span>
+                    <span className="text-xs text-white/50">XP Total</span>
+                </GlassCard>
+                <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
+                    <Flame className="w-6 h-6 text-orange-500 mb-2" />
+                    <span className="text-2xl font-bold text-white">{userProfile?.streak || 0}</span>
+                    <span className="text-xs text-white/50">Dias Streak</span>
+                </GlassCard>
+             </div>
+             
+             <GlassCard className="p-4">
+                 <h3 className="text-sm font-semibold text-white mb-3">Acesso Rápido</h3>
+                 <div className="space-y-2">
+                     <Button variant="ghost" className="w-full justify-start text-white/70" onClick={() => setPage('ciclo')}>
+                         <Target className="w-4 h-4 mr-2 text-purple-400" /> Ver Ciclo Atual
+                     </Button>
+                     <Button variant="ghost" className="w-full justify-start text-white/70" onClick={() => setPage('ikigai')}>
+                         <Compass className="w-4 h-4 mr-2 text-pink-400" /> Astro-Ikigai
+                     </Button>
+                 </div>
+             </GlassCard>
+        </div>
+
+      </div>
+
+      {/* Modals */}
+      <SprintBuilder
+        isOpen={isSprintBuilderOpen}
+        onClose={() => setIsSprintBuilderOpen(false)}
+        onCreateSprint={(data) => {
+            // Logic handled in parent or we need to pass the handleCreateSprint from parent
+            // Ideally DashboardPage receives handleCreateSprint
+        }} 
+        userProfile={userProfile}
+      />
+
+      <ProtocolManager 
+        protocols={protocols}
+        setProtocols={setProtocols}
+        user={user}
+        isOpen={isProtocolManagerOpen}
+        onClose={() => setIsProtocolManagerOpen(false)}
+      />
+    </div>
+  );
+};
 };
 
 // ============ META YEAR PAGE ============
