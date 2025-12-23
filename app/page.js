@@ -814,7 +814,7 @@ const ProtocolsWidget = ({ protocols, onToggle, activeTab, setActiveTab }) => {
     return true;
   });
   
-  const completedCount = filteredProtocols.filter(p => p.is_checked).length;
+  const completedCount = filteredProtocols.filter(p => p.completed_today).length;
   const totalCount = filteredProtocols.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   
