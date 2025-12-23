@@ -4664,17 +4664,39 @@ export default function App() {
               </ExpandableChatHeader>
               <ExpandableChatBody>
                 <ChatMessageList>
-                  <ChatBubble variant="received">
-                    <ChatBubbleAvatar fallback="AI" />
-                    <ChatBubbleMessage>Olá! Como posso ajudar você a alinhar sua produtividade com sua essência hoje?</ChatBubbleMessage>
-                  </ChatBubble>
+                  {chatMessages.map(msg => (
+                    <ChatBubble key={msg.id} variant={msg.role === 'user' ? 'sent' : 'received'}>
+                        <ChatBubbleAvatar fallback={msg.role === 'user' ? 'U' : 'AI'} />
+                        <ChatBubbleMessage isLoading={false}>
+                            {msg.content}
+                        </ChatBubbleMessage>
+                    </ChatBubble>
+                  ))}
+                  {isChatLoading && (
+                    <ChatBubble variant="received">
+                        <ChatBubbleAvatar fallback="AI" />
+                        <ChatBubbleMessage isLoading={true} />
+                    </ChatBubble>
+                  )}
                 </ChatMessageList>
               </ExpandableChatBody>
               <ExpandableChatFooter>
                  <div className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1">
-                    <ChatInput placeholder="Digite sua dúvida..." />
+                    <ChatInput 
+                        placeholder="Digite sua dúvida..." 
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                            }
+                        }}
+                    />
                     <div className="flex items-center p-3 pt-0 justify-between">
-                       <Button size="sm" className="ml-auto gap-1.5">Enviar <Send className="size-3.5" /></Button>
+                       <Button size="sm" className="ml-auto gap-1.5" onClick={handleSendMessage} disabled={isChatLoading}>
+                         Enviar <Send className="size-3.5" />
+                       </Button>
                     </div>
                  </div>
               </ExpandableChatFooter>
