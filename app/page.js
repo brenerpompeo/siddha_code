@@ -858,7 +858,7 @@ const ProtocolsWidget = ({ protocols, onToggle, activeTab, setActiveTab }) => {
               )}
               <span className={cn(
                 'text-sm text-left',
-                protocol.is_checked ? 'text-white' : 'text-white/70'
+                protocol.completed_today ? 'text-white' : 'text-white/70'
               )}>
                 {protocol.name}
               </span>
