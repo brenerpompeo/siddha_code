@@ -4814,7 +4814,7 @@ export default function App() {
   
   const renderPage = () => {
     switch (currentPage) {
-      case 'dashboard': return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} setSprints={setSprints} />;
+      case 'dashboard': return <DashboardPage userProfile={userProfile} protocols={protocols} onToggleProtocol={handleToggleProtocol} tasks={tasks} sprints={sprints} setSprints={setSprints} setProtocols={setProtocols} user={user} />;
       case 'ciclo': return <CicloPage ciclos={ciclos} setCiclos={setCiclos} sprints={sprints} setSprints={setSprints} tasks={tasks} userProfile={userProfile} />;
       case 'sprints': return <SprintsPage tasks={tasks} setTasks={setTasks} userProfile={userProfile} onUpdateTask={handleUpdateTask} sprints={sprints} setSprints={setSprints} ciclos={ciclos} />;
       case 'ikigai': return <IkigaiBuilder userProfile={userProfile} />;
