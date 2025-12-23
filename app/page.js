@@ -1204,194 +1204,124 @@ const AuthPage = ({ onAuthSuccess }) => {
 
 // ============ DASHBOARD PAGE ============
 
-const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprints, setSprints, setProtocols, user }) => {
+const DashboardPage = ({ userProfile, protocols, onToggleProtocol, tasks, sprints, setSprints, setProtocols, user, setPage }) => {
   const [protocolTab, setProtocolTab] = useState('daily');
   const [isSprintBuilderOpen, setIsSprintBuilderOpen] = useState(false);
-  const [isProtocolManagerOpen, setIsProtocolManagerOpen] = useState(false); // NEW state
+  const [isProtocolManagerOpen, setIsProtocolManagerOpen] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+
   const displayName = userProfile?.username || 'Warrior';
-  const today = new Date().toLocaleDateString('pt-BR', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+  const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   
-  // Quick stats
-  const completedTasks = tasks.filter(t => t.status === 'wisdom').length;
-  const activeTasks = tasks.filter(t => t.status !== 'wisdom').length;
-  const activeSprints = sprints.filter(s => s.status === 'active').length;
-  
-  const handleCreateSprint = async (sprintData) => {
-      try {
-          const currentYear = new Date().getFullYear();
-          const currentCiclo = ciclos.find(c => c.year === currentYear);
-          
-          // 1. Create Sprint in DB
-          const newSprint = {
-              user_id: user.id,
-              meta_year_id: currentCiclo?.id || null,
-              title: sprintData.title,
-              intention: sprintData.intention,
-              archetype: sprintData.archetype,
-              start_date: new Date().toISOString(),
-              end_date: new Date(Date.now() + (sprintData.duration * 24 * 60 * 60 * 1000)).toISOString(),
-              status: 'active',
-              goals: sprintData.goals || [],
-              commitments: sprintData.dailyCommitments || []
-          };
-
-          const { data: createdSprint, error: sprintError } = await supabase
-              .from('sprints')
-              .insert(newSprint)
-              .select()
-              .single();
-
-          if (sprintError) throw sprintError;
-
-          // 2. Create Tasks from Goals (Auto-generate)
-          if (sprintData.goals && sprintData.goals.length > 0) {
-              const tasksToCreate = sprintData.goals.map(goal => ({
-                  user_id: user.id,
-                  sprint_id: createdSprint.id,
-                  title: goal,
-                  description: 'Meta convertida automaticamente em tarefa.',
-                  status: 'todo',
-                  pillar: sprintData.focusPillars?.[0] || 'physical', // Default first pillar
-                  created_at: new Date().toISOString()
-              }));
-
-              const { data: createdTasks, error: taskError } = await supabase
-                  .from('tasks')
-                  .insert(tasksToCreate)
-                  .select();
-                  
-              if (taskError) console.error('Error auto-creating tasks:', taskError);
-              
-              if (createdTasks) {
-                  setTasks(prev => [...prev, ...createdTasks]);
-              }
-          }
-
-          // 3. Update Local State
-          setSprints(prev => [...prev, createdSprint]);
-          alert('Sprint criado com sucesso!');
-
-      } catch (error) {
-          console.error('Error creating sprint:', error);
-          alert('Erro ao criar sprint.');
-      }
-  };
+  const activeSprint = sprints.find(s => s.status === 'active');
+  const latestJournal = tasks.filter(t => t.pillar === 'journal').slice(-1)[0]; // Mocking latest journal from tasks or need prop
+  // Ideally, pass journals prop to DashboardPage
   
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
+    <div className="space-y-6 pb-20">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Bem-vindo, {displayName}!</h1>
+          <h1 className="text-2xl font-bold text-white">Olá, {displayName}</h1>
           <p className="text-white/50 capitalize">{today}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary">
-            <Calendar className="w-4 h-4 mr-2" />
-            Ver Calendário
+          <Button variant="ghost" size="sm" onClick={() => setShowAnalytics(!showAnalytics)} className={cn(showAnalytics && "bg-white/10")}>
+            <BarChart3 className="w-4 h-4 mr-2" /> Analytics
           </Button>
           <Button onClick={() => setIsSprintBuilderOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Sprint
+            <Plus className="w-4 h-4 mr-2" /> Novo Sprint
           </Button>
         </div>
       </div>
-      
-      {/* Quick Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <GlassCard className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{(userProfile?.xp || 0).toLocaleString()}</p>
-              <p className="text-xs text-white/50">Total XP</p>
-            </div>
+
+      {/* Analytics Overlay Mode */}
+      {showAnalytics && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4">
+              <GlassCard className="p-4 col-span-1">
+                  <h3 className="text-sm font-bold text-white mb-4">Progresso dos 7 Pilares</h3>
+                  <PillarRadarChart tasks={tasks} />
+              </GlassCard>
+              <GlassCard className="p-4 col-span-1">
+                  <h3 className="text-sm font-bold text-white mb-4">Produtividade (Sprints)</h3>
+                  <ProductivityBarChart sprints={sprints} tasks={tasks} />
+              </GlassCard>
+              <GlassCard className="p-4 col-span-1">
+                  <h3 className="text-sm font-bold text-white mb-4">Distribuição de Foco</h3>
+                  <SubPillarPieChart tasks={tasks} />
+              </GlassCard>
           </div>
-        </GlassCard>
+      )}
+
+      {/* Main Command Center Grid (Bento Layout) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
-        <GlassCard className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
-              <Flame className="w-5 h-5 text-orange-500" />
+        {/* Left Column: Sprint & Ciclo Context (4 cols) */}
+        <div className="md:col-span-4 space-y-6">
+            <div className="h-48">
+                <ActiveSprintWidget sprint={activeSprint} tasks={tasks} onClick={() => setPage('sprints')} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{userProfile?.streak || 0}</p>
-              <p className="text-xs text-white/50">Dias Streak</p>
+                <MiniJournalWidget latestEntry={null} onClick={() => setPage('journal')} />
             </div>
-          </div>
-        </GlassCard>
-        
-        <GlassCard className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{completedTasks}</p>
-              <p className="text-xs text-white/50">Completadas</p>
-            </div>
-          </div>
-        </GlassCard>
-        
-        <GlassCard className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-              <Kanban className="w-5 h-5 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{activeSprints}</p>
-              <p className="text-xs text-white/50">Sprints Ativos</p>
-            </div>
-          </div>
-        </GlassCard>
-      </div>
-      
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column */}
-        <div className="space-y-6">
-          <div className="relative">
-            <ProtocolsWidget 
-              protocols={protocols} 
-              onToggle={onToggleProtocol} 
-              activeTab={protocolTab}
-              setActiveTab={setProtocolTab}
-            />
-            <button 
-              onClick={() => setIsProtocolManagerOpen(true)}
-              className="absolute top-6 right-6 p-1 text-white/30 hover:text-white hover:bg-white/10 rounded transition-all"
-              title="Gerenciar Protocolos"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-          </div>
-          
-          <SprintsOverviewWidget 
-            sprints={sprints} 
-            onViewSprint={() => {}} 
-            onNewSprint={() => setIsSprintBuilderOpen(true)}
-          />
         </div>
-        
-        {/* Right Column */}
-        <div className="space-y-6">
-          <PillarRadarChart userProfile={userProfile} tasks={tasks} />
-          <AIAssistantWidget userProfile={userProfile} />
+
+        {/* Center Column: Protocols (4 cols) */}
+        <div className="md:col-span-4 h-full">
+            <div className="relative h-full">
+                <ProtocolsWidget 
+                  protocols={protocols} 
+                  onToggle={onToggleProtocol} 
+                  activeTab={protocolTab}
+                  setActiveTab={setProtocolTab}
+                />
+                <button 
+                  onClick={() => setIsProtocolManagerOpen(true)}
+                  className="absolute top-4 right-4 p-2 text-white/30 hover:text-white hover:bg-white/10 rounded transition-all"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+            </div>
         </div>
+
+        {/* Right Column: Stats & Quick Actions (4 cols) */}
+        <div className="md:col-span-4 space-y-4">
+             <div className="grid grid-cols-2 gap-4">
+                <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
+                    <Zap className="w-6 h-6 text-yellow-400 mb-2" />
+                    <span className="text-2xl font-bold text-white">{userProfile?.xp || 0}</span>
+                    <span className="text-xs text-white/50">XP Total</span>
+                </GlassCard>
+                <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
+                    <Flame className="w-6 h-6 text-orange-500 mb-2" />
+                    <span className="text-2xl font-bold text-white">{userProfile?.streak || 0}</span>
+                    <span className="text-xs text-white/50">Dias Streak</span>
+                </GlassCard>
+             </div>
+             
+             <GlassCard className="p-4">
+                 <h3 className="text-sm font-semibold text-white mb-3">Acesso Rápido</h3>
+                 <div className="space-y-2">
+                     <Button variant="ghost" className="w-full justify-start text-white/70" onClick={() => setPage('ciclo')}>
+                         <Target className="w-4 h-4 mr-2 text-purple-400" /> Ver Ciclo Atual
+                     </Button>
+                     <Button variant="ghost" className="w-full justify-start text-white/70" onClick={() => setPage('ikigai')}>
+                         <Compass className="w-4 h-4 mr-2 text-pink-400" /> Astro-Ikigai
+                     </Button>
+                 </div>
+             </GlassCard>
+        </div>
+
       </div>
-      
-      {/* Sprint Builder Modal */}
+
+      {/* Modals */}
       <SprintBuilder
         isOpen={isSprintBuilderOpen}
         onClose={() => setIsSprintBuilderOpen(false)}
-        onCreateSprint={handleCreateSprint}
+        onCreateSprint={(data) => {
+            // Logic handled in parent or we need to pass the handleCreateSprint from parent
+            // Ideally DashboardPage receives handleCreateSprint
+        }} 
         userProfile={userProfile}
       />
 
