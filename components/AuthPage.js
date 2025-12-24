@@ -91,6 +91,25 @@ export default function AuthPage({ onAuthSuccess }) {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: 'tester@siddhacode.com', 
+        password: 'Password123!' 
+      });
+      if (error) throw error;
+      onAuthSuccess(data.user);
+    } catch (err) {
+      console.error(err);
+      setError('Conta Demo não disponível. Execute o script de seed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-void flex items-center justify-center p-4 relative overflow-hidden">
       <StarsBackground className="absolute inset-0 z-0 pointer-events-none" />
@@ -134,7 +153,7 @@ export default function AuthPage({ onAuthSuccess }) {
                 mode === 'signin' ? 'bg-primary text-white' : 'text-white/60 hover:text-white'
               )}
             >
-              Sign In
+              Entrar
             </button>
             <button
               onClick={() => { setMode('signup'); setError(''); setMessage(''); }}
@@ -143,7 +162,7 @@ export default function AuthPage({ onAuthSuccess }) {
                 mode === 'signup' ? 'bg-primary text-white' : 'text-white/60 hover:text-white'
               )}
             >
-              Sign Up
+              Cadastrar
             </button>
           </div>
           
@@ -161,28 +180,28 @@ export default function AuthPage({ onAuthSuccess }) {
           )}
           
           <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp} className="space-y-4">
-            <Input label="Email" type="email" icon={Mail} placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input label="Email" type="email" icon={Mail} placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             
             <div className="relative">
-              <Input label="Password" type={showPassword ? 'text' : 'password'} icon={Lock} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Input label="Senha" type={showPassword ? 'text' : 'password'} icon={Lock} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-9 text-white/30 hover:text-white/60">
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             
             {mode === 'signup' && (
-              <Input label="Confirm Password" type={showPassword ? 'text' : 'password'} icon={Lock} placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+              <Input label="Confirmar Senha" type={showPassword ? 'text' : 'password'} icon={Lock} placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
             )}
             
             <Button type="submit" className="w-full" size="lg" loading={loading}>
-              {mode === 'signin' ? 'Sign In' : 'Create Account'}
+              {mode === 'signin' ? 'Entrar' : 'Criar Conta'}
             </Button>
           </form>
           
           <div className="mt-6 pt-6 border-t border-white/10">
-            <Button type="button" variant="secondary" className="w-full" onClick={() => onAuthSuccess({ id: 'demo-user', email: 'demo@siddhacode.com' })}>
+            <Button type="button" variant="secondary" className="w-full" onClick={handleDemoLogin} loading={loading}>
               <Sparkles className="w-4 h-4 mr-2" />
-              Try Demo Mode
+              Testar Demo
             </Button>
             <p className="text-xs text-white/30 text-center mt-2">Explore todas as funcionalidades</p>
           </div>
