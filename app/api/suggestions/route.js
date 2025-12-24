@@ -115,7 +115,7 @@ const FALLBACK_SUGGESTIONS = {
 
 const openai = new OpenAI({
   apiKey: process.env.EMERGENT_LLM_KEY,
-  baseURL: 'https://api.emergent.sh/v1',
+  baseURL: 'https://api.emergent.sh/v1/openai',
 });
 
 async function callAI(systemPrompt, userPrompt) {
