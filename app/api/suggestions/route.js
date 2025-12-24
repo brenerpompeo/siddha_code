@@ -248,18 +248,8 @@ Responda em JSON:
           data.message
         );
         if (!result) {
-            // If JSON parsing fails (likely because it's just text), return the raw content if possible, 
-            // but callAI expects JSON. Let's make a simple text wrapper.
-             const response = await openai.chat.completions.create({
-                model: 'gpt-4o',
-                messages: [
-                    { role: 'system', content: 'Você é o Siddha AI. Responda de forma curta e inspiradora.' },
-                    { role: 'user', content: data.message }
-                ],
-                temperature: 0.7,
-                max_tokens: 300,
-            });
-            result = { reply: response.choices[0]?.message?.content || "Estou reorganizando minhas redes neurais. Tente novamente em breve! 🧘‍♂️" };
+            // Fallback for chat if AI fails
+            result = { reply: "Estou em silêncio profundo no momento. Tente novamente mais tarde. 🧘‍♂️" };
         } else if (result.reply === undefined) {
              // If the JSON prompt instruction wasn't explicit enough in callAI for this case, 
              // we might have gotten an object but not 'reply'.
