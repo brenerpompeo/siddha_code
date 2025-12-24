@@ -97,7 +97,7 @@ export default function AuthPage({ onAuthSuccess }) {
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ 
-        email: 'tester@siddhacode.com', 
+        email: 'tester@example.com', 
         password: 'Password123!' 
       });
       if (error) throw error;

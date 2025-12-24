@@ -14,7 +14,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function seed() {
   console.log('🌱 Starting seed process...');
 
-  const email = 'tester@siddhacode.com';
+  const email = 'tester@example.com';
   const password = 'Password123!';
   
   console.log(`Checking user: ${email}`);
