@@ -347,7 +347,7 @@ export default function App() {
   const [ciclos, setCiclos] = useState([]);
   
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const supabase = supabase; // Already imported from lib/supabase
+  // const supabase = supabase; // Already imported from lib/supabase
   
   // Handle mood selection
   const handleSelectMood = (moodId) => {
