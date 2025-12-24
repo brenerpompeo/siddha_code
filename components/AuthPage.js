@@ -91,25 +91,6 @@ export default function AuthPage({ onAuthSuccess }) {
     }
   };
 
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email: 'tester@example.com', 
-        password: 'Password123!' 
-      });
-      if (error) throw error;
-      onAuthSuccess(data.user);
-    } catch (err) {
-      console.error(err);
-      setError('Conta Demo não disponível. Execute o script de seed.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-void flex items-center justify-center p-4 relative overflow-hidden">
       <StarsBackground className="absolute inset-0 z-0 pointer-events-none" />
@@ -197,14 +178,6 @@ export default function AuthPage({ onAuthSuccess }) {
               {mode === 'signin' ? 'Entrar' : 'Criar Conta'}
             </Button>
           </form>
-          
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <Button type="button" variant="secondary" className="w-full" onClick={handleDemoLogin} loading={loading}>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Testar Demo
-            </Button>
-            <p className="text-xs text-white/30 text-center mt-2">Explore todas as funcionalidades</p>
-          </div>
         </GlassCard>
       </div>
     </div>
