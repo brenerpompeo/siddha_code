@@ -121,7 +121,7 @@ const openai = new OpenAI({
 async function callAI(systemPrompt, userPrompt) {
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
@@ -251,7 +251,7 @@ Responda em JSON:
             // If JSON parsing fails (likely because it's just text), return the raw content if possible, 
             // but callAI expects JSON. Let's make a simple text wrapper.
              const response = await openai.chat.completions.create({
-                model: 'gpt-4o-mini',
+                model: 'gpt-4o',
                 messages: [
                     { role: 'system', content: 'Você é o Siddha AI. Responda de forma curta e inspiradora.' },
                     { role: 'user', content: data.message }
