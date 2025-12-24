@@ -15,7 +15,7 @@ async function seed() {
   console.log('🌱 Starting seed process...');
 
   // 1. Create/Get User
-  const email = `test_user_${Date.now()}@siddhacode.com`;
+  const email = 'tester@siddhacode.com';
   const password = 'Password123!';
   
   console.log(`Creating user: ${email}`);
