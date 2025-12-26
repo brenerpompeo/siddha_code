@@ -30,7 +30,7 @@ export default function AuthPage({ onAuthSuccess }) {
       if (error) throw error;
       onAuthSuccess(data.user);
     } catch (err) {
-      setError(err.message || 'Failed to sign in');
+      setError(err.message || 'Falha ao entrar. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export default function AuthPage({ onAuthSuccess }) {
     setError('');
     
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('As senhas não coincidem');
       setLoading(false);
       return;
     }
@@ -57,12 +57,12 @@ export default function AuthPage({ onAuthSuccess }) {
       if (error) throw error;
       
       if (data.user && !data.user.confirmed_at) {
-        setMessage('Check your email for the confirmation link!');
+        setMessage('Verifique seu email para confirmar o cadastro!');
       } else {
         onAuthSuccess(data.user);
       }
     } catch (err) {
-      setError(err.message || 'Failed to sign up');
+      setError(err.message || 'Falha ao criar conta.');
     } finally {
       setLoading(false);
     }
@@ -84,9 +84,8 @@ export default function AuthPage({ onAuthSuccess }) {
         },
       });
       if (error) throw error;
-      // Redirect happens automatically
     } catch (err) {
-      setError(err.message || `Failed to sign in with ${provider}`);
+      setError(err.message || `Falha ao entrar com ${provider}`);
       setLoading(false);
     }
   };
