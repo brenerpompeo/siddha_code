@@ -277,8 +277,8 @@ export default function CicloPage({ ciclos, setCiclos, sprints, setSprints, task
                                   </div>
                                   <div className="text-right">
                                       <div className="text-2xl font-bold text-white">
-                                          {tasks.filter(t => t.sprintId === sprint.id && t.status === 'wisdom').length}
-                                          <span className="text-sm text-white/30 font-normal">/{tasks.filter(t => t.sprintId === sprint.id).length} tarefas</span>
+                                          {tasks.filter(t => (t.sprintId === sprint.id || t.sprint_id === sprint.id) && t.status === 'wisdom').length}
+                                          <span className="text-sm text-white/30 font-normal">/{tasks.filter(t => t.sprintId === sprint.id || t.sprint_id === sprint.id).length} tarefas</span>
                                       </div>
                                   </div>
                               </div>

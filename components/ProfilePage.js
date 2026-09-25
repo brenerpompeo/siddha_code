@@ -16,7 +16,7 @@ export default function ProfilePage({ user, userProfile, setUserProfile, onEditP
   return (
     <div className="space-y-6">
       <div className="relative h-48 rounded-2xl overflow-hidden bg-gradient-to-r from-primary/20 to-purple-600/20 border border-white/10">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center opacity-30" />
+        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')" }} />
         <div className="absolute bottom-6 left-6 flex items-end gap-6">
           <div className="w-24 h-24 rounded-2xl bg-[#0f0f13] border-4 border-[#0f0f13] flex items-center justify-center text-3xl font-bold text-white shadow-xl">
             {userProfile?.username?.[0]?.toUpperCase() || 'U'}

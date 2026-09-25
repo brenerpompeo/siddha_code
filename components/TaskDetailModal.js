@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Calendar, Save } from 'lucide-react';
+import { X, Calendar, Save, Trash2 } from 'lucide-react';
 import { PILLARS, getPillarByKey } from '@/lib/constants/pillars';
 import { SUB_PILLARS } from '@/lib/constants/sub-pillars';
 
@@ -14,7 +14,7 @@ const PRIORITY_OPTS = [
   { value: 'high', label: 'Alta', color: 'bg-red-500/20 text-red-400' }
 ];
 
-export default function TaskDetailModal({ task, isOpen, onClose, onUpdate }) {
+export default function TaskDetailModal({ task, isOpen, onClose, onUpdate, onDelete }) {
   const [formData, setFormData] = useState({});
   const [metadata, setMetadata] = useState({});
   const [loading, setLoading] = useState(false);
@@ -56,6 +56,25 @@ export default function TaskDetailModal({ task, isOpen, onClose, onUpdate }) {
     } catch (error) {
       console.error('Error updating task:', error);
       alert('Erro ao salvar tarefa');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', task.id);
+      if (error) throw error;
+      if (onDelete) onDelete(task.id);
+      onClose();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Erro ao excluir tarefa');
     } finally {
       setLoading(false);
     }
@@ -249,12 +268,18 @@ export default function TaskDetailModal({ task, isOpen, onClose, onUpdate }) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 bg-white/[0.02] flex justify-end gap-2">
-            <Button variant="ghost" onClick={onClose} disabled={loading}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={loading}>
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Salvando...' : 'Salvar Alterações'}
+        <div className="p-4 border-t border-white/10 bg-white/[0.02] flex items-center justify-between">
+            <Button variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={handleDelete} disabled={loading}>
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                Excluir
             </Button>
+            <div className="flex gap-2">
+                <Button variant="ghost" onClick={onClose} disabled={loading}>Cancelar</Button>
+                <Button onClick={handleSave} disabled={loading}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {loading ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+            </div>
         </div>
 
       </div>

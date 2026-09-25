@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Search, Plus, BookOpen, X, Edit3, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { supabase } from '@/lib/supabase';
 import { CustomButton as Button } from './custom-ui/CustomButton';
 import { CustomInput as Input } from './custom-ui/CustomInput';
 import { GlassCard } from './custom-ui/GlassCard';
@@ -12,6 +13,7 @@ import { PILLARS, getPillarByKey, getPillarColor } from '@/lib/constants/pillars
 export default function JournalPage({ journals, setJournals, userProfile }) {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [newEntry, setNewEntry] = useState({ title: '', content: '', tags: [], pillar: 'mental' });
   const [searchQuery, setSearchQuery] = useState('');
   const [tagInput, setTagInput] = useState('');
@@ -21,24 +23,74 @@ export default function JournalPage({ journals, setJournals, userProfile }) {
     j.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  const handleCreateEntry = () => {
+  const handleCreateEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) return;
+    const entryId = uuidv4();
+    const now = new Date().toISOString();
     const entry = {
-      id: uuidv4(),
+      id: entryId,
+      user_id: userProfile?.id || null,
       ...newEntry,
-      created_at: new Date().toISOString(),
+      created_at: now,
       linked_entries: []
     };
     setJournals(prev => [entry, ...prev]);
     setNewEntry({ title: '', content: '', tags: [], pillar: 'mental' });
     setTagInput('');
     setIsCreating(false);
+
+    if (userProfile?.id) {
+      try {
+        await supabase.from('journal_entries').insert({
+          id: entryId,
+          user_id: userProfile.id,
+          title: entry.title,
+          content: entry.content,
+          pillar: entry.pillar,
+          tags: entry.tags || [],
+          created_at: now
+        });
+      } catch (err) {
+        console.error('Error inserting journal entry into Supabase:', err);
+      }
+    }
   };
   
-  const handleDeleteEntry = (entryId) => {
+  const handleDeleteEntry = async (entryId) => {
     if (confirm('Tem certeza que deseja excluir esta entrada?')) {
       setJournals(prev => prev.filter(j => j.id !== entryId));
       setSelectedEntry(null);
+      try {
+        await supabase.from('journal_entries').delete().eq('id', entryId);
+      } catch (err) {
+        console.error('Error deleting journal entry from Supabase:', err);
+      }
+    }
+  };
+
+  const handleUpdateEntry = async () => {
+    if (!newEntry.title.trim() || !newEntry.content.trim()) return;
+    const updated = {
+      ...newEntry,
+      updated_at: new Date().toISOString()
+    };
+    setJournals(prev => prev.map(j => j.id === updated.id ? { ...j, ...updated } : j));
+    if (selectedEntry?.id === updated.id) {
+      setSelectedEntry(prev => ({ ...prev, ...updated }));
+    }
+    setIsEditing(false);
+    setNewEntry({ title: '', content: '', tags: [], pillar: 'mental' });
+
+    try {
+      await supabase.from('journal_entries').update({
+        title: updated.title,
+        content: updated.content,
+        pillar: updated.pillar,
+        tags: updated.tags || [],
+        updated_at: updated.updated_at
+      }).eq('id', updated.id);
+    } catch (err) {
+      console.error('Error updating journal entry in Supabase:', err);
     }
   };
   
@@ -163,13 +215,13 @@ export default function JournalPage({ journals, setJournals, userProfile }) {
         )}
       </div>
       
-      {/* Create Entry Modal */}
-      {isCreating && (
+      {/* Create or Edit Entry Modal */}
+      {(isCreating || isEditing) && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface border border-white/10 rounded-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">Nova Entrada</h3>
-              <button onClick={() => setIsCreating(false)} className="p-2 hover:bg-white/10 rounded-lg">
+              <h3 className="text-lg font-semibold text-white">{isEditing ? 'Editar Entrada' : 'Nova Entrada'}</h3>
+              <button onClick={() => { setIsCreating(false); setIsEditing(false); }} className="p-2 hover:bg-white/10 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -280,8 +332,10 @@ export default function JournalPage({ journals, setJournals, userProfile }) {
               </div>
               
               <div className="flex gap-3 pt-4">
-                <Button type="button" variant="secondary" className="flex-1" onClick={() => setIsCreating(false)}>Cancelar</Button>
-                <Button className="flex-1" onClick={handleCreateEntry}>Salvar Entrada</Button>
+                <Button type="button" variant="secondary" className="flex-1" onClick={() => { setIsCreating(false); setIsEditing(false); }}>Cancelar</Button>
+                <Button className="flex-1" onClick={isEditing ? handleUpdateEntry : handleCreateEntry}>
+                  {isEditing ? 'Salvar Alterações' : 'Salvar Entrada'}
+                </Button>
               </div>
             </div>
           </div>
@@ -336,7 +390,19 @@ export default function JournalPage({ journals, setJournals, userProfile }) {
                 Criado em {new Date(selectedEntry.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
               </span>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm"><Edit3 className="w-4 h-4 mr-1" /> Editar</Button>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setNewEntry({
+                    id: selectedEntry.id,
+                    title: selectedEntry.title,
+                    content: selectedEntry.content,
+                    tags: selectedEntry.tags || [],
+                    pillar: selectedEntry.pillar || 'mental'
+                  });
+                  setIsEditing(true);
+                  setSelectedEntry(null);
+                }}>
+                  <Edit3 className="w-4 h-4 mr-1" /> Editar
+                </Button>
                 <Button variant="danger" size="sm" onClick={() => handleDeleteEntry(selectedEntry.id)}>
                   <Trash2 className="w-4 h-4 mr-1" /> Excluir
                 </Button>

@@ -25,6 +25,7 @@ import TaskDetailModal from './TaskDetailModal';
 import { getArchetypeByKey, getHDTypeByKey } from '@/lib/constants/archetypes';
 import { PILLARS, getPillarByKey } from '@/lib/constants/pillars';
 import { KANBAN_COLUMNS, XP_REWARDS } from '@/lib/constants/kanban';
+import { supabase } from '@/lib/supabase';
 
 // Sprint Status Badge Component
 const SprintStatusBadge = ({ status }) => {
@@ -224,7 +225,7 @@ const SprintMasterSection = ({ sprints, selectedStatus, onSelectStatus, onSelect
 // Timeline View Component
 const TimelineView = ({ tasks, sprints, selectedSprint }) => {
   const sprintTasks = selectedSprint 
-    ? tasks.filter(t => t.sprintId === selectedSprint.id)
+    ? tasks.filter(t => t.sprintId === selectedSprint.id || t.sprint_id === selectedSprint.id)
     : tasks;
   
   const days = selectedSprint?.duration || 7;
@@ -299,7 +300,7 @@ const TimelineView = ({ tasks, sprints, selectedSprint }) => {
 // Roadmap View Component (List by Pillar)
 const RoadmapView = ({ tasks, selectedSprint }) => {
   const sprintTasks = selectedSprint 
-    ? tasks.filter(t => t.sprintId === selectedSprint.id)
+    ? tasks.filter(t => t.sprintId === selectedSprint.id || t.sprint_id === selectedSprint.id)
     : tasks;
   
   const tasksByPillar = useMemo(() => {
@@ -819,7 +820,7 @@ const KanbanView = ({ tasks, setTasks, onUpdateTask, userProfile }) => {
   );
 };
 
-export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask, sprints, setSprints, ciclos = [], setCiclos }) {
+export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask, sprints, setSprints, ciclos = [], setCiclos, onCreateSprint }) {
   const [viewMode, setViewMode] = useState('kanban');
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
@@ -852,7 +853,7 @@ export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask
   const filteredTasks = useMemo(() => {
     let filtered = tasks;
     if (selectedSprint) {
-      filtered = filtered.filter(t => t.sprintId === selectedSprint.id);
+      filtered = filtered.filter(t => t.sprintId === selectedSprint.id || t.sprint_id === selectedSprint.id);
     }
     if (selectedPillar) {
       filtered = filtered.filter(t => t.pillar === selectedPillar);
@@ -863,25 +864,34 @@ export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask
   // Count tasks for selected sprint
   const selectedSprintTasksCount = useMemo(() => {
     if (!selectedSprint) return 0;
-    return tasks.filter(t => t.sprintId === selectedSprint.id).length;
+    return tasks.filter(t => t.sprintId === selectedSprint.id || t.sprint_id === selectedSprint.id).length;
   }, [tasks, selectedSprint]);
   
-  const handleUpdateSprintStatus = (sprintId, newStatus) => {
+  const handleUpdateSprintStatus = async (sprintId, newStatus) => {
     setSprints(prev => prev.map(s => 
       s.id === sprintId ? { ...s, status: newStatus } : s
     ));
     if (selectedSprint?.id === sprintId) {
       setSelectedSprint(prev => prev ? { ...prev, status: newStatus } : null);
     }
+    try {
+      await supabase.from('sprints').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', sprintId);
+    } catch (err) {
+      console.error('Error updating sprint status in Supabase:', err);
+    }
   };
   
-  const handleCreateTaskForSprint = (task) => {
+  const handleCreateTaskForSprint = async (task) => {
+    const sprintRef = selectedSprint?.id || null;
     const newTask = {
       ...task,
       id: uuidv4(),
+      user_id: userProfile?.id || null,
       status: 'potential',
       gut_check_score: null,
-      sprintId: selectedSprint?.id || null
+      sprintId: sprintRef,
+      sprint_id: sprintRef,
+      created_at: new Date().toISOString()
     };
     setTasks(prev => [...prev, newTask]);
     
@@ -893,6 +903,24 @@ export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask
           : s
       ));
     }
+
+    if (userProfile?.id) {
+      try {
+        await supabase.from('tasks').insert({
+          id: newTask.id,
+          user_id: userProfile.id,
+          sprint_id: sprintRef,
+          title: newTask.title,
+          description: newTask.description || '',
+          pillar: newTask.pillar || 'personal',
+          status: 'potential',
+          xp_reward: newTask.xp_reward || 15,
+          created_at: newTask.created_at
+        });
+      } catch (err) {
+        console.error('Error inserting task into Supabase:', err);
+      }
+    }
   };
   
   // Edit Sprint
@@ -902,7 +930,7 @@ export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask
   };
   
   // Update Sprint
-  const handleUpdateSprint = (updatedSprint) => {
+  const handleUpdateSprint = async (updatedSprint) => {
     setSprints(prev => prev.map(s => 
       s.id === updatedSprint.id ? { ...s, ...updatedSprint } : s
     ));
@@ -911,18 +939,33 @@ export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask
     }
     setIsEditSprintModalOpen(false);
     setSprintToEdit(null);
+
+    try {
+      await supabase.from('sprints').update({
+        title: updatedSprint.title,
+        intention: updatedSprint.intention,
+        archetype: updatedSprint.archetype,
+        start_date: updatedSprint.start_date || updatedSprint.startDate || null,
+        end_date: updatedSprint.end_date || updatedSprint.endDate || null,
+        status: updatedSprint.status || 'active',
+        goals: updatedSprint.goals || [],
+        updated_at: new Date().toISOString()
+      }).eq('id', updatedSprint.id);
+    } catch (err) {
+      console.error('Error updating sprint in Supabase:', err);
+    }
   };
   
   const [selectedTask, setSelectedTask] = useState(null); // For Task Detail Modal
 
   // Delete Sprint
-  const handleDeleteSprint = (sprintId) => {
+  const handleDeleteSprint = async (sprintId) => {
     // Remove sprint
     setSprints(prev => prev.filter(s => s.id !== sprintId));
     
     // Unlink tasks from this sprint (don't delete them)
     setTasks(prev => prev.map(t => 
-      t.sprintId === sprintId ? { ...t, sprintId: null } : t
+      (t.sprintId === sprintId || t.sprint_id === sprintId) ? { ...t, sprintId: null, sprint_id: null } : t
     ));
     
     // Clear selection if deleted sprint was selected
@@ -930,6 +973,13 @@ export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask
       const remainingSprints = sprints.filter(s => s.id !== sprintId);
       const nextActive = remainingSprints.find(s => s.status === 'active');
       setSelectedSprint(nextActive || null);
+    }
+
+    try {
+      await supabase.from('sprints').delete().eq('id', sprintId);
+      await supabase.from('tasks').update({ sprint_id: null }).eq('sprint_id', sprintId);
+    } catch (err) {
+      console.error('Error deleting sprint from Supabase:', err);
     }
   };
   
@@ -1059,34 +1109,57 @@ export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask
       <SprintBuilder
         isOpen={isCreateSprintModalOpen}
         onClose={() => setIsCreateSprintModalOpen(false)}
-        onCreateSprint={(sprint) => {
+        onCreateSprint={async (sprint) => {
+          if (onCreateSprint) {
+            await onCreateSprint(sprint);
+            return;
+          }
           const sprintId = uuidv4();
           const currentCiclo = ciclos?.find(m => m.status === 'active');
           const newSprint = { 
             ...sprint, 
             id: sprintId, 
+            user_id: userProfile?.id || null,
             status: 'active', 
             created_at: new Date().toISOString(), 
             tasks_count: sprint.goals?.length || 0, 
             completed_tasks: 0,
-            cicloId: currentCiclo?.id || null
+            meta_year_id: currentCiclo?.id || null
           };
           setSprints(prev => [...prev, newSprint]);
+          
+          if (userProfile?.id) {
+            try {
+              await supabase.from('sprints').insert(newSprint);
+            } catch (e) {
+              console.error('Error saving sprint to Supabase:', e);
+            }
+          }
           
           // Create tasks from goals automatically
           if (sprint.goals && sprint.goals.length > 0) {
             const newTasks = sprint.goals.map((goal, index) => ({
               id: uuidv4(),
+              user_id: userProfile?.id || null,
               title: goal,
               content: goal,
               pillar: sprint.focusPillars?.[index % sprint.focusPillars.length] || 'personal',
               status: 'potential',
               sprintId: sprintId,
+              sprint_id: sprintId,
               gut_check_score: null,
-              xp: 30,
+              xp_reward: 30,
               created_at: new Date().toISOString()
             }));
             setTasks(prev => [...prev, ...newTasks]);
+
+            if (userProfile?.id) {
+              try {
+                await supabase.from('tasks').insert(newTasks);
+              } catch (e) {
+                console.error('Error saving sprint tasks to Supabase:', e);
+              }
+            }
           }
           
           setSelectedSprint(newSprint);
@@ -1109,8 +1182,16 @@ export default function SprintsPage({ tasks, setTasks, userProfile, onUpdateTask
         task={selectedTask}
         onClose={() => setSelectedTask(null)}
         onUpdate={(updatedTask) => {
-            setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
-            if (onUpdateTask) onUpdateTask(updatedTask);
+            const normalized = {
+              ...updatedTask,
+              sprintId: updatedTask.sprint_id || updatedTask.sprintId,
+              sprint_id: updatedTask.sprint_id || updatedTask.sprintId
+            };
+            setTasks(prev => prev.map(t => t.id === normalized.id ? normalized : t));
+            if (onUpdateTask) onUpdateTask(normalized);
+        }}
+        onDelete={(deletedTaskId) => {
+            setTasks(prev => prev.filter(t => t.id !== deletedTaskId));
         }}
       />
     </div>

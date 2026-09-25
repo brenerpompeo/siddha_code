@@ -352,15 +352,21 @@ export default function App() {
   // Handle mood selection
   const handleSelectMood = (moodId) => {
     const today = new Date().toISOString().split('T')[0];
+    const activeSprint = sprints.find(s => s.status === 'active');
+    const newEntry = { 
+      date: today, 
+      mood: moodId, 
+      sprintId: activeSprint?.id || null,
+      timestamp: new Date().toISOString()
+    };
+
     setMoodHistory(prev => {
       const filtered = prev.filter(m => m.date !== today);
-      const activeSprint = sprints.find(s => s.status === 'active');
-      return [...filtered, { 
-        date: today, 
-        mood: moodId, 
-        sprintId: activeSprint?.id || null,
-        timestamp: new Date().toISOString()
-      }];
+      const updated = [...filtered, newEntry];
+      if (user?.id) {
+        supabase.from('profiles').update({ mood_history: updated }).eq('id', user.id).then();
+      }
+      return updated;
     });
     toast.success('Humor registrado!');
   };
@@ -435,6 +441,9 @@ export default function App() {
       }
 
       setUserProfile(profile);
+      if (profile?.mood_history && Array.isArray(profile.mood_history)) {
+        setMoodHistory(profile.mood_history);
+      }
 
       // 2. Fetch Sprints
       const { data: fetchedSprints } = await supabase.from('sprints').select('*').eq('user_id', authUser.id);
@@ -442,7 +451,12 @@ export default function App() {
 
       // 3. Fetch Tasks
       const { data: fetchedTasks } = await supabase.from('tasks').select('*').eq('user_id', authUser.id);
-      setTasks(fetchedTasks || []);
+      const normalizedTasks = (fetchedTasks || []).map(t => ({
+        ...t,
+        sprintId: t.sprint_id || t.sprintId,
+        sprint_id: t.sprint_id || t.sprintId
+      }));
+      setTasks(normalizedTasks);
 
       // 4. Fetch Meta Years (Ciclos)
       const { data: fetchedCiclos } = await supabase.from('meta_years').select('*').eq('user_id', authUser.id);
@@ -519,19 +533,54 @@ export default function App() {
     }
   };
   
-  const handleUpdateTask = (updatedTask) => {
+  const handleUpdateTask = async (updatedTask) => {
+    const sprintRef = updatedTask.sprint_id || updatedTask.sprintId || null;
+    const normalized = {
+      ...updatedTask,
+      sprintId: sprintRef,
+      sprint_id: sprintRef
+    };
+
     setTasks(prev => {
-      const oldTask = prev.find(t => t.id === updatedTask.id);
-      if (updatedTask.status === 'wisdom' && oldTask?.status !== 'wisdom') {
-        const xpGain = updatedTask.xp_reward || XP_REWARDS.task_complete;
+      const oldTask = prev.find(t => t.id === normalized.id);
+      if (normalized.status === 'wisdom' && oldTask?.status !== 'wisdom') {
+        const xpGain = normalized.xp_reward || XP_REWARDS.task_complete;
         setUserProfile(profile => {
           const pillarStats = { ...(profile?.pillars_stats || {}) };
-          pillarStats[updatedTask.pillar] = (pillarStats[updatedTask.pillar] || 0) + 1;
-          return { ...profile, xp: (profile?.xp || 0) + xpGain, pillars_stats: pillarStats };
+          pillarStats[normalized.pillar] = (pillarStats[normalized.pillar] || 0) + 1;
+          const newXp = (profile?.xp || 0) + xpGain;
+          const updatedProfile = { ...profile, xp: newXp, pillars_stats: pillarStats };
+          
+          if (profile?.id) {
+            supabase
+              .from('profiles')
+              .update({ xp: newXp, pillars_stats: pillarStats, updated_at: new Date().toISOString() })
+              .eq('id', profile.id)
+              .then();
+          }
+          return updatedProfile;
         });
       }
-      return prev.map(t => t.id === updatedTask.id ? updatedTask : t);
+      return prev.map(t => t.id === normalized.id ? { ...t, ...normalized } : t);
     });
+
+    try {
+      await supabase
+        .from('tasks')
+        .update({
+          status: normalized.status,
+          gut_check_score: normalized.gut_check_score ?? null,
+          title: normalized.title,
+          pillar: normalized.pillar,
+          sprint_id: sprintRef,
+          task_metadata: normalized.task_metadata || normalized.metadata || {},
+          due_date: normalized.due_date || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', normalized.id);
+    } catch (err) {
+      console.error('Error persisting task update to Supabase:', err);
+    }
   };
 
   const handleCreateSprint = async (sprint) => {
@@ -669,6 +718,7 @@ export default function App() {
                       sprints={sprints} 
                       setSprints={setSprints} 
                       ciclos={ciclos} 
+                      onCreateSprint={handleCreateSprint}
                   />
               )}
               {currentPage === 'ikigai' && <IkigaiBuilder userProfile={userProfile} />}
