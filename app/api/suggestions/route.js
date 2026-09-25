@@ -113,13 +113,25 @@ const FALLBACK_SUGGESTIONS = {
   }
 };
 
-const openai = new OpenAI({
-  apiKey: process.env.EMERGENT_LLM_KEY,
-  baseURL: 'https://api.emergent.sh/v1/openai',
-});
+export const dynamic = 'force-dynamic';
+
+function getOpenAIClient() {
+  const apiKey = process.env.EMERGENT_LLM_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({
+    apiKey,
+    baseURL: process.env.EMERGENT_LLM_KEY ? 'https://api.emergent.sh/v1/openai' : undefined,
+  });
+}
 
 async function callAI(systemPrompt, userPrompt) {
   try {
+    const openai = getOpenAIClient();
+    if (!openai) {
+      console.warn('AI key not set, returning fallback suggestions.');
+      return null;
+    }
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
